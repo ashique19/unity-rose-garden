@@ -151,10 +151,16 @@ class BillGenerator extends Controller
             // Total consumption value for this month (Current Month - Previous Month)
             $monthlyValue = $currentSum - $prevSum;
 
+            // Total volume consumed in m3
+            $volumeM3 = $currentSum - $prevSum;
+
+            // Convert the volume figure to mass (kg) by dividing by 2.04
+            $massKg = $volumeM3 / 2.04;
+
             // Format the string label to display in the dropdown option
             $dropdownOptions[] = [
                 'value' => $currentMonth->format('Y-M'),
-                'label' => $currentMonth->format('Y-M') . " (" . number_format($monthlyValue, 2) . " m³)"
+                'label' => $currentMonth->format('Y-M') . " (" . number_format($volumeM3, 2) . " m³)". " (" . number_format($massKg, 2) . " kg)"
             ];
         }
 
