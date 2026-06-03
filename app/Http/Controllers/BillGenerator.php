@@ -131,9 +131,35 @@ class BillGenerator extends Controller
 
     public function index()
     {
+        $dropdownOptions = [];
+        
+        // Loop to calculate the consumption data for the past 6 months
+        for ($i = 0; $i > -6; $i--) {
+            $currentMonth = \Carbon\Carbon::now()->addMonths($i);
+            $prevMonth = (clone $currentMonth)->subMonth();
 
-        return view('bills.generator');
+            // Sum of all readings for the current loop month
+            $currentSum = \App\Models\MeterReading::whereYear('reading_date', $currentMonth->year)
+                ->whereMonth('reading_date', $currentMonth->month)
+                ->sum('reading_unit');
 
+            // Sum of all readings for the previous month
+            $prevSum = \App\Models\MeterReading::whereYear('reading_date', $prevMonth->year)
+                ->whereMonth('reading_date', $prevMonth->month)
+                ->sum('reading_unit');
+
+            // Total consumption value for this month (Current Month - Previous Month)
+            $monthlyValue = $currentSum - $prevSum;
+
+            // Format the string label to display in the dropdown option
+            $dropdownOptions[] = [
+                'value' => $currentMonth->format('Y-M'),
+                'label' => $currentMonth->format('Y-M') . " (" . number_format($monthlyValue, 2) . " m³)"
+            ];
+        }
+
+        // Pass the calculated options array down to your generator blade view
+        return view('bills.generator', compact('dropdownOptions'));
     }
 
     /**

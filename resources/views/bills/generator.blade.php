@@ -29,11 +29,11 @@
                                 <label for="month" class="form-label font-weight-bold">Select Month</label>
                                 <select class="form-select @error('month') is-invalid @enderror" id="month" name="month" required>
                                     <option value="" selected disabled>Choose a Month...</option>
-                                    @for($i=0; $i > -6; $i--)
-                                    <option value="{{ \Carbon\Carbon::now()->addMonths($i)->format('Y-M') }}">
-                                        {{ \Carbon\Carbon::now()->addMonths($i)->format('Y-M') }}
-                                    </option>
-                                    @endfor
+                                    @foreach($dropdownOptions as $option)
+                                        <option value="{{ $option['value'] }}" {{ request('bill_month') == $option['value'] ? 'selected' : '' }}>
+                                            {{ $option['label'] }}
+                                        </option>
+                                    @endforeach
                                 </select>
                                 @error('month')
                                     <div class="invalid-feedback">{{ $message }}</div>
