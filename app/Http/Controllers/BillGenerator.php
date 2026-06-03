@@ -134,7 +134,7 @@ class BillGenerator extends Controller
         $dropdownOptions = [];
         
         // Loop to calculate the consumption data for the past 6 months
-        for ($i = 0; $i > -6; $i--) {
+        for ($i = -1; $i > -6; $i--) {
             $currentMonth = \Carbon\Carbon::now()->addMonths($i);
             $prevMonth = (clone $currentMonth)->subMonth();
 
