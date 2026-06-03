@@ -25,7 +25,7 @@ class BillGenerator extends Controller
         ]);
 
         // Define the standard LPG conversion factor: 1 m3 = 2.25 kg
-        $m3ToKgMultiplier = 2.25;
+        $m3ToKgMultiplier = 2.04;
 
         try {
             // Parse the chosen billing month
@@ -155,7 +155,7 @@ class BillGenerator extends Controller
             $volumeM3 = $currentSum - $prevSum;
 
             // Convert the volume figure to mass (kg) by dividing by 2.04
-            $massKg = $volumeM3 / 2.04;
+            $massKg = $volumeM3 * 2.04;
 
             // Format the string label to display in the dropdown option
             $dropdownOptions[] = [
