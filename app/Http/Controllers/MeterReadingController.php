@@ -13,26 +13,30 @@ class MeterReadingController extends Controller
     // Display a listing of the readings
     public function index(Request $request)
     {
-        // Start your query builder instance
-        $query = MeterReading::query()->with('flat'); // eager load the flat relationship
+        // Start your query builder and select meter_readings columns
+        $query = MeterReading::query()
+            ->select('meter_readings.*')
+            ->join('flats', 'meter_readings.flat_id', '=', 'flats.id')
+            ->with('flat')
+            // Sort naturally: by length first (so 2-char '2A' comes before 3-char '10A'), then alphabetically
+            ->orderByRaw('LENGTH(flats.name) ASC')
+            ->orderBy('flats.name', 'ASC');
 
         // Check if the query parameter 'q' exists
         if ($request->has('q') && !empty($request->query('q'))) {
             try {
-                // Carbon safely parses strings like "2026-May" or "2026-05"
-                $date = Carbon::parse($request->query('q'));
+                $date = \Carbon\Carbon::parse($request->query('q'));
 
-                // Filter by year and month
-                $query->whereYear('reading_date', $date->year)
-                      ->whereMonth('reading_date', $date->month);
-            } catch (Exception $e) {
-                // Optional: handle invalid date format gracefully 
-                // (e.g., ignore the filter or return a validation error)
+                $query->whereYear('meter_readings.reading_date', $date->year)
+                    ->whereMonth('meter_readings.reading_date', $date->month);
+            } catch (\Exception $e) {
+                // Handle invalid date format gracefully
             }
         }
 
-        // Fetch the results (or use ->paginate(15) if you want pagination)
+        // Fetch exactly 18 flats per page
         $readings = $query->paginate(18);
+        
         return view('meter_readings.index', compact('readings', 'request'));
     }
 
