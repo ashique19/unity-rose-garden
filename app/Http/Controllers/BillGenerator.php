@@ -188,7 +188,10 @@ class BillGenerator extends Controller
                         ->with(['details.flat'])
                         ->firstOrFail();
 
-            return view('bills.show', compact('bill'));
+            // Dynamically calculate the building-wide outstanding due sum for this statement month
+            $totalPendingDue = $bill->details->where('payment_status', 'unpaid')->sum('bill_for_month');
+
+            return view('bills.show', compact('bill', 'totalPendingDue'));
             
         } catch (\Exception $e) {
             // Redirects back to your history view with a clear message
