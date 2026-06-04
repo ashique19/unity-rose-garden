@@ -8,26 +8,43 @@
             <a href="/bill-history" class="text-decoration-none text-secondary">← Back to History</a>
         </div>
 
-        <div class="fv-card mb-4">
-            <div class="fv-card-label">{{ $bill->name }}</div>
+        @php
+            // Dynamically calculate the building-wide outstanding due sum for this statement month
+            $totalPendingDue = $bill->details->where('payment_status', 'unpaid')->sum('amount_due');
+        @endphp
+
+        <div class="fv-card mb-4 border-start border-primary border-4 shadow-sm">
+            <div class="fv-card-label bg-light text-dark font-weight-bold border-bottom py-2.5 ps-4">
+                {{ $bill->name }}
+            </div>
             <div class="p-4 bg-white rounded-bottom border border-top-0">
-                <div class="row g-3">
-                    <div class="col-md-3">
-                        <small class="text-muted d-block">Total Building Bill</small>
-                        <strong class="fs-5 text-dark">{{ number_format($bill->total_bill, 2) }} Tk</strong>
+                <div class="row g-3 text-center text-md-start">
+                    
+                    <div class="col-md-3 border-end border-light border-2">
+                        <small class="text-muted d-block text-uppercase tracking-wider mb-1" style="font-size: 10px; font-weight: 700;">Total Building Bill</small>
+                        <strong class="fs-4 text-dark">{{ number_format($bill->total_bill, 2) }} Tk</strong>
                     </div>
-                    <div class="col-md-3">
-                        <small class="text-muted d-block">Total Gas Consumed</small>
-                        <strong class="fs-5 text-dark">{{ number_format($bill->total_used_m3, 2) }} m³</strong>
+                    
+                    <div class="col-md-3 border-end border-light border-2">
+                        <small class="text-muted d-block text-uppercase tracking-wider mb-1" style="font-size: 10px; font-weight: 700;">Total Pending Due</small>
+                        <strong class="fs-4 {{ $totalPendingDue > 0 ? 'text-danger' : 'text-success' }}">
+                            {{ number_format($totalPendingDue, 2) }} Tk
+                        </strong>
                     </div>
-                    <div class="col-md-3">
-                        <small class="text-muted d-block">Total Weight Conversion</small>
-                        <strong class="fs-5 text-dark">{{ number_format($bill->total_used_kg, 2) }} kg</strong>
+                    
+                    <div class="col-md-3 border-end border-light border-2">
+                        <small class="text-muted d-block text-uppercase tracking-wider mb-1" style="font-size: 10px; font-weight: 700;">Total Consumption Metrics</small>
+                        <strong class="fs-5 text-dark d-block" style="line-height: 1.2;">
+                            {{ number_format($bill->total_used_m3, 2) }} m³
+                        </strong>
+                        <small class="text-secondary" style="font-size: 11px;">Mass: {{ number_format($bill->total_used_kg, 2) }} kg</small>
                     </div>
+                    
                     <div class="col-md-3">
-                        <small class="text-muted d-block">Calculated Rate / KG</small>
-                        <strong class="fs-5 text-success">{{ number_format($bill->price_per_kg, 2) }} Tk</strong>
+                        <small class="text-muted d-block text-uppercase tracking-wider mb-1" style="font-size: 10px; font-weight: 700;">Calculated Rate / KG</small>
+                        <strong class="fs-4 text-success">{{ number_format($bill->price_per_kg, 2) }} Tk</strong>
                     </div>
+
                 </div>
             </div>
         </div>
