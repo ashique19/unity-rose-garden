@@ -31,6 +31,7 @@
                         <th>Current Reading</th>
                         <th>Consumed (m³)</th>
                         <th>Converted Mass (kg)</th>
+                        <th>Price per (kg)</th>
                         <th class="pe-4 text-end">Amount Due</th>
                     </tr>
                 </thead>
@@ -57,6 +58,11 @@
                             <td>
                                 <span class="badge bg-secondary-subtle text-secondary px-2 py-1">
                                     {{ number_format($statement->used_kg, 2) }} kg
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary-subtle text-secondary px-2 py-1">
+                                    {{ $statement->bill->price_per_kg }} Tk/kg
                                 </span>
                             </td>
                             <td class="pe-4 text-end font-weight-bold text-dark">
