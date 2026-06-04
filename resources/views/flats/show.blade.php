@@ -60,7 +60,7 @@
                                 </span>
                             </td>
                             <td class="pe-4 text-end font-weight-bold text-dark">
-                                {{ number_format($statement->amount_due, 2) }} Tk
+                                {{ number_format($statement->used_kg * $statement->bill->price_per_kg, 2) }} Tk
                             </td>
                         </tr>
                         @endforeach
