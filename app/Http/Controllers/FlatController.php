@@ -6,12 +6,6 @@ use Illuminate\Http\Request;
 
 class FlatController extends Controller
 {
-
-    // Apply authentication selectively to specific methods
-    public function __construct()
-    {
-        $this->middleware('auth')->only(['edit', 'update']);
-    }
     
     // 1. List all flats with natural sorting
     public function index()
@@ -61,5 +55,5 @@ class FlatController extends Controller
 
         return view('flats.show', compact('flat', 'billingHistory'));
     }
-    
+
 }
