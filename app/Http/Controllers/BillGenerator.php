@@ -183,13 +183,13 @@ class BillGenerator extends Controller
             // into a complete date object: 2026-05-01 00:00:00
             $date = \Illuminate\Support\Carbon::parse($dateString)->startOfMonth();
 
-            // 2. Query using ->toDateString() which matches the MySQL standard date format (YYYY-MM-DD)
+            // 1. Query using ->toDateString() which matches the MySQL standard date format (YYYY-MM-DD)
             $bill = Bill::whereDate('bill_for_month', $date->toDateString())
                         ->with(['details.flat'])
                         ->firstOrFail();
 
-            // Dynamically calculate the building-wide outstanding due sum for this statement month
-            $totalPendingDue = $bill->details->where('payment_status', 'unpaid')->sum('used_kg') * $bill->price_per_kg;
+            // FIX: Sum the database values directly to achieve absolute math consistency!
+            $totalPendingDue = $bill->details->where('payment_status', 'unpaid')->sum('amount_due');
             
             return view('bills.show', compact('bill', 'totalPendingDue'));
             
