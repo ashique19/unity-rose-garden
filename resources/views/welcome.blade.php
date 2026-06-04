@@ -26,7 +26,7 @@
                 <div class="p-4 bg-white rounded-bottom">
                     <div class="row g-4 text-center text-md-start">
                         <div class="col-md-3">
-                            <span class="text-muted d-block mb-1">Total Bill Collected</span>
+                            <span class="text-muted d-block mb-1">Total Building Bill</span>
                             <h3 class="fw-bold text-dark mb-0">{{ number_format($latestBill->total_bill, 2) }} Tk</h3>
                         </div>
                         <div class="col-md-3">
