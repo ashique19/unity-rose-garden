@@ -23,8 +23,12 @@ Route::get('bill-history/{date}', [BillGenerator::class, 'show']);
 Route::get('bill-history', [BillGenerator::class, 'history'])->name('bill-history');
 
 
+// View historical statements for an individual flat
+Route::get('/flats/{id}', [FlatController::class, 'show'])->name('flats.show');
 
+// View all flats
 Route::get('/flats', [FlatController::class, 'index'])->name('flats.index');
+
 
 // 2. Protected routes: Only logged-in users can view the edit form or submit changes
 Route::middleware(['auth'])->group(function () {

@@ -28,7 +28,13 @@
                     @foreach($flats as $flat)
                     <tr>
                         <td class="ps-4 text-muted">#{{ $flat->id }}</td>
-                        <strong><td>Flat {{ $flat->name }}</td></strong>
+                        <strong>
+                            <td>
+                                <a href="{{ route('flats.show', $flat->id) }}" class="text-decoration-none font-weight-bold text-primary">
+                                    Flat {{ $flat->name }} ↗
+                                </a>
+                            </td>
+                        </strong>
                         <td>
                             @if($flat->status === 'online')
                                 <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 rounded">Active Billing (Online)</span>

@@ -6,6 +6,13 @@ use Illuminate\Http\Request;
 
 class FlatController extends Controller
 {
+
+    // Apply authentication selectively to specific methods
+    public function __construct()
+    {
+        $this->middleware('auth')->only(['edit', 'update']);
+    }
+    
     // 1. List all flats with natural sorting
     public function index()
     {
@@ -39,4 +46,20 @@ class FlatController extends Controller
         return redirect()->route('flats.index')
             ->with('success', "Flat {$flat->name} status updated successfully.");
     }
+
+    // 4. Show the latest 12 billing line items for a specific flat
+    public function show($id)
+    {
+        // Find the flat or fail instantly with a 404
+        $flat = Flat::findOrFail($id);
+
+        // Fetch the 12 latest statements linked to this flat
+        $billingHistory = \App\Models\BillDetail::where('flat_id', $id)
+            ->orderBy('bill_for_month', 'desc')
+            ->take(12)
+            ->get();
+
+        return view('flats.show', compact('flat', 'billingHistory'));
+    }
+    
 }
