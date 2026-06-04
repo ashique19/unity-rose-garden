@@ -1,7 +1,7 @@
 @extends('layouts.layout')
 @section('content')
 
-<div class="container pt-5 pb-5 mt-20">
+<div class="container pt-5 pb-5">
     
     <div class="mb-3">
         <a href="{{ route('flats.index') }}" class="text-decoration-none text-secondary">← Back to Directory</a>
@@ -38,7 +38,8 @@
                 <tbody>
                     @if($billingHistory->isEmpty())
                         <tr>
-                            <td colspan="6" class="text-center py-4 text-muted">
+                            <!-- Fixed Colspan to match the 7 headers above -->
+                            <td colspan="7" class="text-center py-4 text-muted">
                                 No billing records found for this flat yet.
                             </td>
                         </tr>
@@ -46,13 +47,16 @@
                         @foreach($billingHistory as $statement)
                         <tr>
                             <td class="ps-4 font-weight-medium">
-                                {{ \Carbon\Carbon::parse($statement->bill_for_month)->format('F Y') }}
-                                <a href="{{ route('flats.bill.print', ['flat_id' => $flat->flat_id, 'bill_month' => $statement->bill_for_month]) }}" 
-                                    target="_blank" 
-                                    class="btn btn-sm btn-outline-secondary px-2 py-1"
-                                    style="font-size: 11px;">
-                                    📄 Print Receipt
-                                </a>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span>{{ \Carbon\Carbon::parse($statement->bill_for_month)->format('F Y') }}</span>
+                                    <!-- Fixed Parameter target mapping from flat_id to id -->
+                                    <a href="{{ route('flats.bill.print', ['flat_id' => $flat->id, 'bill_month' => $statement->bill_for_month]) }}" 
+                                        target="_blank" 
+                                        class="btn btn-sm btn-outline-secondary px-2 py-0.5"
+                                        style="font-size: 11px;">
+                                        📄 Print
+                                    </a>
+                                </div>
                             </td>
                             <td>{{ number_format($statement->previous_reading, 2) }}</td>
                             <td>{{ number_format($statement->current_reading, 2) }}</td>
@@ -67,12 +71,12 @@
                                 </span>
                             </td>
                             <td>
-                                <span class="badge bg-secondary-subtle text-secondary px-2 py-1">
-                                    {{ $statement->bill->price_per_kg }} Tk/kg
+                                <span class="badge bg-light text-secondary border px-2 py-1">
+                                    {{ number_format($statement->bill->price_per_kg ?? 0, 2) }} Tk/kg
                                 </span>
                             </td>
                             <td class="pe-4 text-end font-weight-bold text-dark">
-                                {{ number_format($statement->used_kg * $statement->bill->price_per_kg, 2) }} Tk
+                                {{ number_format($statement->amount_due ?? ($statement->used_kg * ($statement->bill->price_per_kg ?? 0)), 2) }} Tk
                             </td>
                         </tr>
                         @endforeach
