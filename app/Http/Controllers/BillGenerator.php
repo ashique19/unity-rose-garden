@@ -179,25 +179,35 @@ class BillGenerator extends Controller
     public function show($dateString)
     {
         try {
-            // 1. Carbon safely parses strings like "2026-May" or "2026-05" 
-            // into a complete date object: 2026-05-01 00:00:00
+            // 1. Carbon safely parses strings into a standard format (YYYY-MM-DD)
             $date = \Illuminate\Support\Carbon::parse($dateString)->startOfMonth();
 
-            // 1. Query using ->toDateString() which matches the MySQL standard date format (YYYY-MM-DD)
+            // 2. Query the parent bill and eager load child flat parameters
             $bill = Bill::whereDate('bill_for_month', $date->toDateString())
                         ->with(['details.flat'])
                         ->firstOrFail();
 
-            // FIX: Individually round each flat's due amount first, then sum them up
-            $totalPendingDue = $bill->details->where('payment_status', 'unpaid')
-                ->sum(function ($detail) use ($bill) {
-                    return round($detail->used_kg * $bill->price_per_kg, 2);
-                });
+            // 3. Centralized calculation closure to enforce absolute rounding consistency
+            $calculateFlatAmount = function ($detail) use ($bill) {
+                return round($detail->used_kg * $bill->price_per_kg, 2);
+            };
+
+            // 4. Compute display-perfect master total from all details
+            $totalBill = $bill->details->sum($calculateFlatAmount);
+
+            // 5. Compute display-perfect pending total from unpaid details
+            $totalPendingDue = $bill->details->where('payment_status', 'unpaid')->sum($calculateFlatAmount);
+
+            // 6. Hard Safeguard: Prevent due amount from exceeding the total bill due to floating-point edges
+            if ($totalPendingDue > $totalBill) {
+                $totalPendingDue = $totalBill;
+            }
             
-            return view('bills.show', compact('bill', 'totalPendingDue'));
+            // 7. Return everything cleanly to the view
+            return view('bills.show', compact('bill', 'totalBill', 'totalPendingDue'));
             
         } catch (\Exception $e) {
-            // Redirects back to your history view with a clear message
+            // Redirects back to history view with a clear error block if parsing fails
             return redirect()->route('bill-history')->withErrors([
                 'error' => 'Could not find any generated bill records for ' . htmlspecialchars($dateString)
             ]);
