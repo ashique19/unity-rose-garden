@@ -17,9 +17,9 @@
                     <div class="col-md-3">
                         <small class="text-muted d-block">Total Building Bill</small>
                         <strong class="fs-4 text-dark">{{ number_format($totalBill, 2) }} Tk</strong>
-                        <strong class="fs-4 {{ $totalPendingDue > 0 ? 'text-danger' : 'text-success' }}">
+                        <p class="fs-6 {{ $totalPendingDue > 0 ? 'text-danger' : 'text-success' }}">
                             {{ number_format($totalPendingDue, 2) }} Tk
-                        </strong>
+                        </p>
                     </div>
                     <div class="col-md-3">
                         <small class="text-muted d-block">Total Gas Consumed</small>
