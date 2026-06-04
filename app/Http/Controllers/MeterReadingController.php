@@ -51,18 +51,49 @@ class MeterReadingController extends Controller
     // Store a newly created reading in storage
     public function store(Request $request)
     {
+        // 1. Validate basic input formats
         $validated = $request->validate([
-            'flat_id' => 'required|exists:flats,id',
+            'flat_id'      => 'required|exists:flats,id',
             'reading_date' => 'required|date',
             'reading_unit' => 'required|numeric|min:0',
         ]);
 
-        MeterReading::create($validated);
+        $flatId = $request->input('flat_id');
+        $readingDate = \Carbon\Carbon::parse($request->input('reading_date'));
+        $newReading = $request->input('reading_unit');
 
-        return 1;
+        // 2. Proactive Error Prevention: Check the previous logged reading
+        $previousReading = MeterReading::where('flat_id', $flatId)
+            ->where('reading_date', '<', $readingDate->toDateString())
+            ->orderBy('reading_date', 'desc')
+            ->first();
 
-        return redirect()->route('meter-readings.index')
-                         ->with('success', 'Meter reading recorded successfully.');
+        // Block submission if a user inputs a lower reading value (typo protection)
+        if ($previousReading && $newReading < $previousReading->reading_unit) {
+            return redirect()->back()
+                ->withErrors(['reading_unit' => "Typo Protection: The input reading ({$newReading}) cannot be lower than the previous reading ({$previousReading->reading_unit}) logged on {$previousReading->reading_date->format('Y-m-d')}."])
+                ->withInput();
+        }
+
+        try {
+            // 3. Database Insertion
+            MeterReading::create($validated);
+
+            return redirect()->route('meter-readings.index')
+                            ->with('success', 'Meter reading recorded successfully.');
+
+        } catch (\Illuminate\Database\QueryException $e) {
+            // 4. Duplicate Entry Catching
+            // Integrity constraint violation (SQLSTATE 23000) handles unique key crashes
+            if ($e->getCode() == 23000) {
+                return redirect()->back()
+                    ->withErrors(['reading_date' => "Duplicate Entry: A meter reading has already been recorded for this flat on this exact date."])
+                    ->withInput();
+            }
+
+            // Rethrow if it's a completely different database exception
+            throw $e;
+        }
     }
 
     // Display the specified reading

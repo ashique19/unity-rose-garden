@@ -41,12 +41,12 @@
                             </div>
 
                             <div class="mb-4">
-                                <label for="total_bill" class="form-label">Total Bill</label>
+                                <label for="price_per_kg" class="form-label">Price per KG</label>
                                 <div class="input-group">
-                                    <input type="number" class="form-control @error('total_bill') is-invalid @enderror" id="total_bill" name="total_bill" placeholder="0.00" value="{{ old('total_bill') }}" required>
+                                    <input type="number" class="form-control @error('price_per_kg') is-invalid @enderror" id="price_per_kg" name="price_per_kg" placeholder="0.00" value="{{ old('price_per_kg') }}" required>
                                     <span class="input-group-text">Tk</span>
                                 </div>
-                                @error('total_bill')
+                                @error('price_per_kg')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror
                             </div>

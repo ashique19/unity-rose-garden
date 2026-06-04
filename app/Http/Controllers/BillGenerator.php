@@ -18,10 +18,10 @@ class BillGenerator extends Controller
      */
     public function store(Request $request)
     {
-        // 1. Validate the incoming form payload
+        // 1. Validate the incoming form payload (Swapped 'total_bill' for 'price_per_kg')
         $request->validate([
-            'month'      => 'required|string',        // Expects "2026-May" or "2026-05"
-            'total_bill' => 'required|numeric|min:0', // Total bill value for KG distribution
+            'month'        => 'required|string',          // Expects "2026-May" or "2026-05"
+            'price_per_kg' => 'required|numeric|min:0',   // Expects fixed rate per kg (e.g., 118.42)
         ]);
 
         // Define the standard LPG conversion factor: 1 m3 = 2.04 kg
@@ -44,7 +44,7 @@ class BillGenerator extends Controller
                 ]);
             }
 
-            // OPTIMIZATION: Fetch all previous month's readings at once to avoid queries inside the loop
+            // Fetch all previous month's readings at once to avoid queries inside the loop
             $previousReadings = MeterReading::whereYear('reading_date', $previousMonth->year)
                 ->whereMonth('reading_date', $previousMonth->month)
                 ->get()
@@ -53,14 +53,17 @@ class BillGenerator extends Controller
             // 3. Begin a Database Transaction
             DB::beginTransaction();
 
-            // 4. Clean up any existing bill records for this exact month to allow regenerations
+            // 4. Clean up any existing bill records for this exact month to allow safe regenerations
             Bill::where('bill_for_month', $billingMonth->toDateString())->delete();
 
             // 5. Loop through all flats to calculate usage and convert to KG
             $totalUsedM3      = 0;
             $totalUsedKg      = 0;
+            $calculatedTotalBill = 0;
             $flatCalculations = [];
             $allFlats         = Flat::all();
+            
+            $inputPricePerKg  = $request->input('price_per_kg');
 
             foreach ($allFlats as $flat) {
                 // Get current month's reading unit
@@ -74,12 +77,16 @@ class BillGenerator extends Controller
                 // Calculate consumption in m3
                 $usedM3 = max(0, $currentUnit - $previousUnit);
                 
-                // Convert gaseous volume (m3) to mass weight weight (KG) using multiplication
+                // Convert gaseous volume (m3) to mass weight (KG) using multiplication
                 $usedKg = $usedM3 * $m3ToKgMultiplier;
 
+                // NEW: Calculate the exact amount due for this flat based on the input rate
+                $flatAmountDue = round($usedKg * $inputPricePerKg, 2);
+
                 // Accumulate building-wide totals
-                $totalUsedM3 += $usedM3;
-                $totalUsedKg += $usedKg;
+                $totalUsedM3         += $usedM3;
+                $totalUsedKg         += $usedKg;
+                $calculatedTotalBill += $flatAmountDue;
 
                 $flatCalculations[] = [
                     'flat_id'          => $flat->id,
@@ -87,23 +94,22 @@ class BillGenerator extends Controller
                     'current_reading'  => $currentUnit,
                     'used_m3'          => $usedM3,
                     'used_kg'          => $usedKg,
+                    'amount_due'       => $flatAmountDue,
                 ];
             }
 
-            // 6. Calculate the dynamic rates per kg and per m3 based on total bill money input
-            $inputTotalBill = $request->input('total_bill');
-            $pricePerKg     = $totalUsedKg > 0 ? ($inputTotalBill / $totalUsedKg) : 0;
-            $pricePerM3     = $totalUsedM3 > 0 ? ($inputTotalBill / $totalUsedM3) : 0;
+            // 6. Calculate the alternative rate per m3 for historical database tracking
+            $pricePerM3 = $totalUsedM3 > 0 ? ($calculatedTotalBill / $totalUsedM3) : 0;
 
-            // 7. Store the parent Bill tracking record with all totals populated
+            // 7. Store the parent Bill tracking record with calculated sums
             $bill = Bill::create([
                 'name'           => 'LPG Gas Bill - ' . $billingMonth->format('F Y'),
                 'bill_for_month' => $billingMonth->toDateString(),
-                'price_per_kg'   => $pricePerKg, // Dynamic price per KG
-                'price_per_m3'   => $pricePerM3, // Maintained for database compatibility
+                'price_per_kg'   => $inputPricePerKg,     // Set from input field
+                'price_per_m3'   => $pricePerM3,          // Derived back for DB logs
                 'total_used_m3'  => $totalUsedM3,
                 'total_used_kg'  => $totalUsedKg,
-                'total_bill'     => $inputTotalBill,
+                'total_bill'     => $calculatedTotalBill, // Sum total of all flat invoices combined
             ]);
 
             // 8. Store detailed individual logs for each flat
@@ -114,7 +120,8 @@ class BillGenerator extends Controller
                     'previous_reading' => $calc['previous_reading'],
                     'current_reading'  => $calc['current_reading'],
                     'used_m3'          => $calc['used_m3'],
-                    'used_kg'          => $calc['used_kg'], // Converted mass weight
+                    'used_kg'          => $calc['used_kg'],
+                    'amount_due'       => $calc['amount_due'], // Stores the cleanly rounded individual cost
                     'bill_for_month'   => $billingMonth->toDateString(),
                 ]);
             }
