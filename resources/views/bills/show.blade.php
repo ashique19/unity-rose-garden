@@ -44,7 +44,8 @@
                             <th>Used Unit (m³)</th>
                             <th>Used Mass (kg)</th>
                             <th>Amount Due</th>
-                            <th class="pe-4 text-end">Status</th>
+                            <th>Status</th>
+                            <th class="pe-4 text-end">Action</th>
                         </tr>
                     </thead>
                     <tbody>
