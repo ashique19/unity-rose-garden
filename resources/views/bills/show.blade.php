@@ -54,7 +54,17 @@
                             @endphp
                             <tr>
                                 <td class="ps-4 font-weight-medium">
-                                    Flat {{ $detail->flat->name ?? $detail->flat_id }}
+                                    <a href="{{ route('flats.show', $detail->flat_id) }}" class="text-decoration-none font-weight-bold text-primary">
+                                        Flat {{ $detail->flat->name ?? $detail->flat_id }} ↗
+                                    </a>
+
+                                    <a href="{{ route('flats.bill.print', ['flat_id' => $detail->flat_id, 'bill_month' => $bill->bill_for_month]) }}" 
+                                        target="_blank" 
+                                        class="btn btn-sm btn-outline-secondary px-2 py-0.5"
+                                        style="font-size: 11px;">
+                                        📄 Print
+                                    </a>
+
                                 </td>
                                 <td>{{ number_format($detail->previous_reading, 2) }}</td>
                                 <td>{{ number_format($detail->current_reading, 2) }}</td>
