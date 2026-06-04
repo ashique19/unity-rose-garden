@@ -1,7 +1,7 @@
 @extends('layouts.layout')
 @section('content')
 
-<div class="features-section pt-20 pb-20">
+<div class="features-section pt-20 pb-20 mt-20">
     <div class="container">
         
         <div class="mb-3">
