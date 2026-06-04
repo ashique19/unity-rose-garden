@@ -1,24 +1,9 @@
 @extends('layouts.layout')
 @section('content')
 
-<div  class="features-section pb-10">
-    <div class="container">
-        <div class="fv-card">
-            <div class="fv-card-label">Show Reading By Month</div>
-            <div class="fv-list" style="margin-top:8px">
-                
-                <div class="fv-list-item">
-                    <span class="fv-list-name">
-                    Flats
-                    </span>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
 
-<div class="container pt-5 pb-5">
+<div class="container pt-5 pb-5 mt-20">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Flats Management Directory</h2>
         <small class="text-muted">Offline flats are automatically excluded from bill generation metrics.</small>
