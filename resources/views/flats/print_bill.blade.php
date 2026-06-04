@@ -112,15 +112,7 @@
         </tr>
         <tr class="border-top bold">
             <td>Total Amount:</td>
-            <td class="text-right">{{ number_format($detail->amount_due, 2) }} Tk</td>
-        </tr>
-        <tr>
-            <td>Service Charge:</td>
-            <td class="text-right">0.00 Tk</td>
-        </tr>
-        <tr class="border-top double-border-bottom bold" style="font-size: 13px;">
-            <td style="padding: 6px 0;">GRAND TOTAL:</td>
-            <td class="text-right" style="padding: 6px 0;">{{ number_format($detail->amount_due, 2) }} Tk</td>
+            <td class="text-right">{{ number_format($mainBill->price_per_kg * $detail->used_kg, 2) }} Tk</td>
         </tr>
     </table>
 
