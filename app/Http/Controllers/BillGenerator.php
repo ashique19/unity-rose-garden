@@ -199,4 +199,17 @@ class BillGenerator extends Controller
     }
 
 
+    public function togglePayment($id)
+    {
+        // Find the targeted flat breakdown line item
+        $detail = BillDetail::findOrFail($id);
+
+        // Swap states cleanly
+        $detail->payment_status = ($detail->payment_status === 'paid') ? 'unpaid' : 'paid';
+        $detail->save();
+
+        return redirect()->back()->with('success', 'Payment collections state adjusted successfully.');
+    }
+
+
 }

@@ -81,6 +81,36 @@
                                 <td class="pe-4 text-end font-weight-bold text-dark">
                                     {{ number_format($flatAmountDue, 2) }} Tk
                                 </td>
+                                <td>
+                                    @if($detail->payment_status === 'paid')
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1.5 rounded">
+                                            🟢 Paid
+                                        </span>
+                                    @else
+                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1.5 rounded">
+                                            🟡 Unpaid
+                                        </span>
+                                    @endif
+                                </td>
+                                <td class="text-end">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        @auth
+                                            <form action="{{ route('bill-details.toggle-payment', $detail->id) }}" method="POST" class="d-inline">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm {{ $detail->payment_status === 'paid' ? 'btn-outline-warning' : 'btn-outline-success' }} px-2 py-1" style="font-size: 11px;">
+                                                    Mark as {{ $detail->payment_status === 'paid' ? 'Unpaid' : 'Paid' }}
+                                                </button>
+                                            </form>
+                                        @endauth
+
+                                        <a href="{{ route('flats.bill.print', ['flat_id' => $detail->flat_id, 'bill_month' => $detail->bill_for_month]) }}" 
+                                        target="_blank" 
+                                        class="btn btn-sm btn-outline-secondary px-2 py-1"
+                                        style="font-size: 11px;">
+                                            📄 Print
+                                        </a>
+                                    </div>
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>

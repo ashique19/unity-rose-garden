@@ -46,6 +46,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/flats/{id}/edit', [FlatController::class, 'edit'])->name('flats.edit');
     Route::put('/flats/{id}', [FlatController::class, 'update'])->name('flats.update');
 
+    // NEW: Security-locked route to toggle monthly payment parameters instantly
+    Route::post('/bill-details/{id}/toggle-payment', [BillGenerator::class, 'togglePayment'])->name('bill-details.toggle-payment');
+
 });
 
 
