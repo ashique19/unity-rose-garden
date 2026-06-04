@@ -1,7 +1,7 @@
 @extends('layouts.layout')
 @section('content')
 
-<div class="container pt-5 pb-5">
+<div class="container pt-5 pb-5 mt-20">
     
     <div class="mb-3">
         <a href="{{ route('flats.index') }}" class="text-decoration-none text-secondary">← Back to Directory</a>

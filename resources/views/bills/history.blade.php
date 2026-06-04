@@ -1,7 +1,7 @@
 @extends('layouts.layout')
 @section('content')
 
-<div class="features-section pb-10">
+<div class="features-section pb-10 mt-20">
     <div class="container">
         <div class="fv-card">
             <div class="fv-card-label">Generated Bills</div>
