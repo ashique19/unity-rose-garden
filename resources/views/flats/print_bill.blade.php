@@ -117,12 +117,8 @@
     </table>
 
     <div class="text-center footer">
-        <p style="margin: 0 0 5px 0;">Please pay your bill promptly.</p>
+        <p style="margin: 0 0 5px 0;">Please pay your bill promptly to Authorized Person or Building Commitee.</p>
         <div class="bold">Thank You</div>
-        
-        <div style="margin-top: 25px; border-top: 1px dotted #000; width: 40%; margin-left: auto; padding-top: 3px;" class="text-center">
-            Signature
-        </div>
     </div>
 
     <script>
