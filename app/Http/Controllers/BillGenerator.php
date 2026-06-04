@@ -188,8 +188,11 @@ class BillGenerator extends Controller
                         ->with(['details.flat'])
                         ->firstOrFail();
 
-            // FIX: Sum the database values directly to achieve absolute math consistency!
-            $totalPendingDue = $bill->details->where('payment_status', 'unpaid')->sum('amount_due');
+            // FIX: Individually round each flat's due amount first, then sum them up
+            $totalPendingDue = $bill->details->where('payment_status', 'unpaid')
+                ->sum(function ($detail) use ($bill) {
+                    return round($detail->used_kg * $bill->price_per_kg, 2);
+                });
             
             return view('bills.show', compact('bill', 'totalPendingDue'));
             
