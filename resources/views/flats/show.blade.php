@@ -1,7 +1,7 @@
 @extends('layouts.layout')
 @section('content')
 
-<div class="container pt-5 pb-5">
+<div class="container pt-5 pb-5 mt-20">
     
     <div class="mb-3">
         <a href="{{ route('flats.index') }}" class="text-decoration-none text-secondary">← Back to Directory</a>
@@ -14,9 +14,9 @@
         </div>
         <div>
             @if($flat->status === 'online')
-                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded">Active Status</span>
+                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded">Status : Online</span>
             @else
-                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 rounded">Offline Status</span>
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 rounded">Status : Offline</span>
             @endif
         </div>
     </div>
