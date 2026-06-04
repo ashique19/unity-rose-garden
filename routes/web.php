@@ -16,11 +16,7 @@ Route::get('login', function () {
 // Handle form submission via the controller
 Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
-Route::resource('meter-readings', MeterReadingController::class);
-Route::get('meter-readings/by-month/{date}', 'MeterReadingController@showByMonth');
 
-Route::get('generate-bill', [BillGenerator::class, 'index']);
-Route::post('generate-bill', [BillGenerator::class, 'store']);
 
 
 Route::get('bill-history/{date}', [BillGenerator::class, 'show']);
@@ -29,8 +25,21 @@ Route::get('bill-history', [BillGenerator::class, 'history'])->name('bill-histor
 
 
 Route::get('/flats', [FlatController::class, 'index'])->name('flats.index');
-Route::get('/flats/{id}/edit', [FlatController::class, 'edit'])->name('flats.edit');
-Route::put('/flats/{id}', [FlatController::class, 'update'])->name('flats.update');
+
+// 2. Protected routes: Only logged-in users can view the edit form or submit changes
+Route::middleware(['auth'])->group(function () {
+
+    Route::resource('meter-readings', MeterReadingController::class);
+    Route::get('meter-readings/by-month/{date}', 'MeterReadingController@showByMonth');
+
+    Route::get('generate-bill', [BillGenerator::class, 'index']);
+    Route::post('generate-bill', [BillGenerator::class, 'store']);
+
+
+    Route::get('/flats/{id}/edit', [FlatController::class, 'edit'])->name('flats.edit');
+    Route::put('/flats/{id}', [FlatController::class, 'update'])->name('flats.update');
+
+});
 
 
 Route::get('/', [DashboardController::class, 'index']);

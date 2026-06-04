@@ -38,6 +38,7 @@
     <a href="/">Home</a>
     <a href="/bill-history">History</a>
     @if(auth()->user())
+      <a href="/flats">Flats</a>
       <a href="/meter-readings">Meter Readings</a>
       <a href="/generate-bill">Generate Bill</a>
       <a href="/logout" class="mobile-cta btn-primary">{{ auth()->user()->name }} | Logout</a>
@@ -52,6 +53,7 @@
       <a href="/" class="nav-logo">Unity <span>Rose Garden</span></a>
       <ul class="nav-links" role="list">
         @if(auth()->user())
+          <a href="/flats">Flats</a>
           <a href="/meter-readings">Meter Readings</a>
           <a href="/generate-bill">Generate Bill</a>
           <a href="/logout" class="mobile-cta btn-primary">{{ auth()->user()->name }} | Logout</a>
