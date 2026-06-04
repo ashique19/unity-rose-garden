@@ -1,3 +1,8 @@
+@php
+    // Dynamically calculate the building-wide outstanding due sum for this statement month
+    $totalPendingDue = $bill->details->where('payment_status', 'unpaid')->sum('bill_for_month');
+@endphp
+
 @extends('layouts.layout')
 @section('content')
 
@@ -8,10 +13,7 @@
             <a href="/bill-history" class="text-decoration-none text-secondary">← Back to History</a>
         </div>
 
-        @php
-            // Dynamically calculate the building-wide outstanding due sum for this statement month
-            $totalPendingDue = $bill->details->where('payment_status', 'unpaid')->sum('bill_for_month');
-        @endphp
+        
 
         <div class="fv-card mb-4">
             <div class="fv-card-label">{{ $bill->name }}</div>
