@@ -77,21 +77,13 @@
     </div>
 
     <div class="header text-center">
-        <h2 class="title">MyGas</h2>
-        <div class="bold">UNITY ROSE GARDEN</div>
+        <h2 class="title">UNITY ROSE GARDEN</h2>
         <div class="subtitle">{{ \Carbon\Carbon::parse($detail->bill_for_month)->format('F Y') }}</div>
     </div>
 
     <div class="bold text-center" style="font-size: 13px; margin-bottom: 10px;">
-        FLAT - {{ $flat->name }}, METER : {{ $flat->id }}
+        FLAT - {{ $flat->name }}
     </div>
-
-    <table class="meta-table">
-        <tr>
-            <td><strong>Mygas:</strong> +8081958262001</td>
-            <td class="text-right" style="font-size: 9px; width: 50%;">Khilgao, Dhaka</td>
-        </tr>
-    </table>
 
     <table class="data-table border-top">
         <tr>
