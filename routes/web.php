@@ -29,6 +29,9 @@ Route::get('/flats/{id}', [FlatController::class, 'show'])->name('flats.show');
 // View all flats
 Route::get('/flats', [FlatController::class, 'index'])->name('flats.index');
 
+// POS Print view for an individual flat's monthly bill
+Route::get('/flats/{flat_id}/bill/{bill_month}', [FlatController::class, 'printBill'])->name('flats.bill.print');
+
 
 // 2. Protected routes: Only logged-in users can view the edit form or submit changes
 Route::middleware(['auth'])->group(function () {

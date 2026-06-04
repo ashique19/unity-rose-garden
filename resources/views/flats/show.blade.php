@@ -47,6 +47,12 @@
                         <tr>
                             <td class="ps-4 font-weight-medium">
                                 {{ \Carbon\Carbon::parse($statement->bill_for_month)->format('F Y') }}
+                                <a href="{{ route('flats.bill.print', ['flat_id' => $detail->flat_id, 'bill_month' => $detail->bill_for_month]) }}" 
+                                    target="_blank" 
+                                    class="btn btn-sm btn-outline-secondary px-2 py-1"
+                                    style="font-size: 11px;">
+                                    📄 Print Receipt
+                                </a>
                             </td>
                             <td>{{ number_format($statement->previous_reading, 2) }}</td>
                             <td>{{ number_format($statement->current_reading, 2) }}</td>

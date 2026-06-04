@@ -56,4 +56,23 @@ class FlatController extends Controller
         return view('flats.show', compact('flat', 'billingHistory'));
     }
 
+
+    public function printBill($flat_id, $bill_month)
+    {
+        // Parse the date safely to match the database column format
+        $parsedMonth = \Carbon\Carbon::parse($bill_month)->startOfMonth()->toDateString();
+
+        $flat = Flat::findOrFail($flat_id);
+        
+        // Grab the specific line-item detail for this flat and month
+        $detail = \App\Models\BillDetail::where('flat_id', $flat_id)
+            ->where('bill_for_month', $parsedMonth)
+            ->firstOrFail();
+
+        // Grab the global bill parameters for rates
+        $mainBill = \App\Models\Bill::where('bill_for_month', $parsedMonth)->firstOrFail();
+
+        return view('flats.print_bill', compact('flat', 'detail', 'mainBill'));
+    }
+
 }
