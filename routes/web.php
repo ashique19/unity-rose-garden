@@ -5,6 +5,7 @@ use App\Http\Controllers\MeterReadingController;
 use App\Http\Controllers\BillGenerator;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FlatController;
 use Illuminate\Support\Facades\Auth;
 
 // Show the login form
@@ -24,6 +25,12 @@ Route::post('generate-bill', [BillGenerator::class, 'store']);
 
 Route::get('bill-history/{date}', [BillGenerator::class, 'show']);
 Route::get('bill-history', [BillGenerator::class, 'history'])->name('bill-history');
+
+
+
+Route::get('/flats', [FlatController::class, 'index'])->name('flats.index');
+Route::get('/flats/{id}/edit', [FlatController::class, 'edit'])->name('flats.edit');
+Route::put('/flats/{id}', [FlatController::class, 'update'])->name('flats.update');
 
 
 Route::get('/', [DashboardController::class, 'index']);
