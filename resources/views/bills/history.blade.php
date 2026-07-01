@@ -10,7 +10,7 @@
                 <div class="fv-list-item">
                     <span class="fv-list-name">
                         @forelse($bills as $bill)
-                            <a class="fv-pill green m-1" href="/bill-history/{{ $bill->bill_for_month->format('Y-M') }}" style="display: inline-block;">
+                            <a class="fv-pill green m-1" href="{{ route('bill-history.show', ['date' => $bill->bill_for_month->format('Y-M')]) }}" style="display: inline-block;">
                                 {{ $bill->bill_for_month->format("Y-M") }}
                             </a>
                         @empty

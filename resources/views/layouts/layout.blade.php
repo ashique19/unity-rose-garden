@@ -35,13 +35,14 @@
 
   <!-- ── MOBILE MENU ── -->
   <div class="mobile-menu" id="mobileMenu" role="dialog" aria-modal="true" aria-label="Navigation">
-    <a href="/">Home</a>
-    <a href="/bill-history">History</a>
+    <a href="{{ route('home') }}">Home</a>
+    <a href="{{ route('bill-history') }}">History</a>
     @if(auth()->user())
-      <a href="/flats">Flats</a>
-      <a href="/meter-readings">Meter Readings</a>
-      <a href="/generate-bill">Generate Bill</a>
-      <a href="/logout" class="mobile-cta btn-primary">{{ auth()->user()->name }} | Logout</a>
+      <a href="{{ route('flats.index') }}">Flats</a>
+      <a href="{{ route('meter-readings-and-charges.index') }}">Meter Readings & Charges</a>
+      <a href="{{ route('charge-templates.index') }}">Charge Configuration</a>
+      <a href="{{ route('generate-bill') }}">Generate Bill</a>
+      <a href="{{ route('logout') }}" class="mobile-cta btn-primary">{{ auth()->user()->name }} | Logout</a>
     @else
       <!-- <a href="/" class="mobile-cta btn-primary">Login</a> -->
     @endif
@@ -50,17 +51,18 @@
   <!-- ── 1. NAV ── -->
   <nav class="nav" id="mainNav" role="navigation" aria-label="Main navigation">
     <div class="nav-inner">
-      <a href="/" class="nav-logo">Unity <span>Rose Garden</span></a>
+      <a href="{{ route('home') }}" class="nav-logo">Unity <span>Rose Garden</span></a>
       <ul class="nav-links" role="list">
         @if(auth()->user())
-          <a href="/flats">Flats</a>
-          <a href="/meter-readings">Meter Readings</a>
-          <a href="/generate-bill">Generate Bill</a>
-          <a href="/logout" class="mobile-cta btn-primary">{{ auth()->user()->name }} | Logout</a>
+          <a href="{{ route('flats.index') }}">Flats</a>
+          <a href="{{ route('meter-readings-and-charges.index') }}">Meter Readings & Charges</a>
+          <a href="{{ route('charge-templates.index') }}">Charge Configuration</a>
+          <a href="{{ route('generate-bill') }}">Generate Bill</a>
+          <a href="{{ route('logout') }}" class="mobile-cta btn-primary">{{ auth()->user()->name }} | Logout</a>
         @else
           <!-- <a href="/" class="mobile-cta btn-primary">Login</a> -->
         @endif
-        <li><a href="/bill-history">History</a></li>
+        <li><a href="{{ route('bill-history') }}">History</a></li>
         <!-- <li><a href="#features">Features</a></li>
         <li><a href="#pricing">Pricing</a></li>
         <li><a href="#testimonials">Reviews</a></li>
@@ -103,7 +105,8 @@
 
   <script src="https://code.jquery.com/jquery-4.0.0.min.js" integrity="sha256-OaVG6prZf4v69dPg6PhVattBXkcOWQB62pdZ3ORyrao=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
-
+  <!-- Put this right inside the <head> tags of resources/views/layouts/layout.blade.php -->
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
   <script src="/js/template.js"></script>
   
   @yield('js')

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bill;
+use App\Models\Flat;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -23,7 +24,16 @@ class DashboardController extends Controller
             return app(BillGenerator::class)->show($dateString);
         }
 
+
+
         // 3. Fallback: If no bills exist in the system yet, render the welcome page empty-state
-        return view('welcome', ['latestBill' => null]);
+        $flats = Flat::orderByRaw('LENGTH(name) ASC')
+            ->orderBy('name', 'ASC')
+            ->get();
+
+        return view('dashboard', [
+            'latestBill' => null,
+            'flats' => $flats,
+        ]);
     }
 }

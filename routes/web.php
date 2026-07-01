@@ -1,12 +1,14 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\MeterReadingController;
 use App\Http\Controllers\BillGenerator;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FlatController;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\ChargeTemplateController;
+
+
 
 // Show the login form
 Route::get('login', function () {
@@ -19,7 +21,7 @@ Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
 
 
-Route::get('bill-history/{date}', [BillGenerator::class, 'show']);
+Route::get('bill-history/{date}', [BillGenerator::class, 'show'])->name('bill-history.show');
 Route::get('bill-history', [BillGenerator::class, 'history'])->name('bill-history');
 
 
@@ -36,11 +38,12 @@ Route::get('/flats/{flat_id}/bill/{bill_month}', [FlatController::class, 'printB
 // 2. Protected routes: Only logged-in users can view the edit form or submit changes
 Route::middleware(['auth'])->group(function () {
 
-    Route::resource('meter-readings', MeterReadingController::class);
-    Route::get('meter-readings/by-month/{date}', 'MeterReadingController@showByMonth');
+    Route::resource('meter-readings-and-charges', \App\Http\Controllers\MeterReadingAndChargesController::class)
+        ->parameters(['meter-readings-and-charges' => 'meterReading']);
+    Route::get('meter-readings-and-charges/by-month/{date}', [\App\Http\Controllers\MeterReadingAndChargesController::class, 'showByMonth']);
 
-    Route::get('generate-bill', [BillGenerator::class, 'index']);
-    Route::post('generate-bill', [BillGenerator::class, 'store']);
+    Route::get('generate-bill', [BillGenerator::class, 'index'])->name('generate-bill');
+    Route::post('generate-bill', [BillGenerator::class, 'store'])->name('generate-bill.store');
 
 
     Route::get('/flats/{id}/edit', [FlatController::class, 'edit'])->name('flats.edit');
@@ -49,10 +52,12 @@ Route::middleware(['auth'])->group(function () {
     // NEW: Security-locked route to toggle monthly payment parameters instantly
     Route::post('/bill-details/{id}/toggle-payment', [BillGenerator::class, 'togglePayment'])->name('bill-details.toggle-payment');
 
+    Route::resource('charge-templates', ChargeTemplateController::class)->except(['create', 'edit', 'show']);
+
 });
 
 
-Route::get('/', [DashboardController::class, 'index']);
+Route::get('/', [DashboardController::class, 'index'])->name('home');
 
 Route::get('logout', function () {
     Auth::logout();

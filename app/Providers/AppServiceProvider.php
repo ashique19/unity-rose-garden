@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,7 +24,9 @@ class AppServiceProvider extends ServiceProvider
         Schema::defaultStringLength(191);
         
 
-        if (env('CODESPACES') === 'true') {
+        // Force Laravel to generate URLs using the exact APP_URL variable when in production/codespaces
+        if (config('app.env') !== 'local' || str_contains(config('app.url'), 'github.dev')) {
+            URL::forceRootUrl(config('app.url'));
             URL::forceScheme('https');
         }
     }

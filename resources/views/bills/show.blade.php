@@ -5,7 +5,7 @@
     <div class="container">
         
         <div class="mb-3">
-            <a href="/bill-history" class="text-decoration-none text-secondary">← Back to History</a>
+            <a href="{{ route('bill-history') }}" class="text-decoration-none text-secondary">← Back to History</a>
         </div>
 
         
