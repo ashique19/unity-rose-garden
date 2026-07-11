@@ -35,3 +35,5 @@ Thumbs.db
 /android/*.iml
 /android/app/google-services.json
 /storage/app/firebase-service-account.json
+
+dist/
