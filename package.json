@@ -7,7 +7,9 @@
         "dev": "vite",
         "cap:sync": "node scripts/write-capacitor-server-url.js && npx cap sync",
         "cap:open": "npx cap open android",
-        "android:sync": "node scripts/write-capacitor-server-url.js && npx cap sync android"
+        "android:sync": "node scripts/write-capacitor-server-url.js && npx cap sync android",
+        "patch:android-push": "node scripts/patch-push-notifications-android.cjs",
+        "postinstall": "npm run patch:android-push"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",

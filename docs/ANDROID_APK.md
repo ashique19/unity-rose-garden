@@ -11,7 +11,7 @@ Sideloadable Android app for **Unity Rose Garden**. The WebView loads your live 
 | **Android Studio** | Install SDK Platform 34+, build-tools, and an emulator or use a physical device |
 | **PHP / Laravel** | Running so the WebView has something to load |
 
-This repo includes a Capacitor Android project under `android/`. **Java and Android Studio may be missing on a given machine** â€” install them before building an APK.
+This repo includes a Capacitor Android project under `android/`. **Java and Android Studio may be missing on a given machine** ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â install them before building an APK.
 
 
 ## Build without Firebase (first debug APK)
@@ -39,18 +39,18 @@ Emulator alias: `http://10.0.2.2:8000`. Physical device: your PC LAN IPv4 (e.g. 
 
 ## Architecture
 
-1. `capacitor.config.json` â€” `appId` `com.unityrosegarden.app`, `webDir` `public/mobile`
-2. `CAPACITOR_SERVER_URL` â€” applied by `scripts/write-capacitor-server-url.js` at **sync** time so the WebView opens Laravel
-3. Offline shell `public/mobile/index.html` â€” only if you remove `server.url`
+1. `capacitor.config.json` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â `appId` `com.unityrosegarden.app`, `webDir` `public/mobile`
+2. `CAPACITOR_SERVER_URL` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â applied by `scripts/write-capacitor-server-url.js` at **sync** time so the WebView opens Laravel
+3. Offline shell `public/mobile/index.html` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â only if you remove `server.url`
 4. On the Laravel site, `public/js/capacitor-push.js` registers the FCM token and `POST`s it to `/device-tokens` (auth + CSRF)
 
 ## 1. Firebase project
 
-1. Open [Firebase Console](https://console.firebase.google.com/) â†’ create/select a project
+1. Open [Firebase Console](https://console.firebase.google.com/) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ create/select a project
 2. Add an **Android** app with package name **`com.unityrosegarden.app`**
-3. Download **`google-services.json`** â†’ place at **`android/app/google-services.json`** (gitignored)
+3. Download **`google-services.json`** ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ place at **`android/app/google-services.json`** (gitignored)
 4. Enable **Cloud Messaging**
-5. Project settings â†’ **Service accounts** â†’ Generate new private key  
+5. Project settings ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ **Service accounts** ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Generate new private key  
    Save as **`storage/app/firebase-service-account.json`** (gitignored)
 6. In `.env`:
 
@@ -68,10 +68,10 @@ Placeholder instructions also live in `android-firebase/README.md`.
 Set **before** every sync that should change the target host:
 
 ```powershell
-# Android emulator â†’ Laravel on your PC (php artisan serve)
+# Android emulator ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Laravel on your PC (php artisan serve)
 $env:CAPACITOR_SERVER_URL = "http://10.0.2.2:8000"
 
-# Physical phone on same Wi-Fi â†’ your PC LAN IP
+# Physical phone on same Wi-Fi ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ your PC LAN IP
 $env:CAPACITOR_SERVER_URL = "http://192.168.1.42:8000"
 
 # Production HTTPS
@@ -110,7 +110,7 @@ In Android Studio:
 
 1. Wait for Gradle sync
 2. Confirm `android/app/google-services.json` is present (for push)
-3. **Build â†’ Build Bundle(s) / APK(s) â†’ Build APK(s)**
+3. **Build ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Build Bundle(s) / APK(s) ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Build APK(s)**
 4. Share the debug APK from `android/app/build/outputs/apk/debug/`
 
 Or CLI (with SDK + JDK installed):
@@ -131,7 +131,7 @@ adb install -r app\build\outputs\apk\debug\app-debug.apk
 1. User opens the Capacitor app (WebView loads Laravel)
 2. User logs in (session cookie)
 3. If `window.Capacitor.isNativePlatform()`, layout loads `/js/capacitor-push.js`
-4. Plugin requests notification permission â†’ `register()` â†’ FCM token
+4. Plugin requests notification permission ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ `register()` ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ FCM token
 5. JS `POST /device-tokens` with CSRF from `<meta name="csrf-token">` and `credentials: 'same-origin'`
 6. Rows land in `device_tokens` (`user_id`, unique `token`, `platform`, `device_name`)
 
@@ -166,3 +166,14 @@ After **Generate month**, admins with registered tokens get a push when FCM is c
 - `android/local.properties`, Gradle build caches (see `.gitignore`)
 
 The `android/` project sources **are** committed so others can open them in Android Studio after adding their own `google-services.json`.
+
+## Crash without google-services.json
+
+Disabling `FirebaseInitProvider` alone is not enough: the web app still calls
+`PushNotifications.register()`, and Capacitor turns the resulting
+`IllegalStateException` into a **FATAL** on the `CapacitorPlugins` thread
+(JS `try/catch` cannot stop it).
+
+This repo patches `@capacitor/push-notifications` via
+`scripts/patch-push-notifications-android.cjs` (also `npm run patch:android-push` /
+postinstall) so `register()` rejects instead of crashing when Firebase is missing.

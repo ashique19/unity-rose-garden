@@ -38,7 +38,7 @@
 
         <!--
           firebase-messaging merges FirebaseInitProvider into the app. Without
-          google-services.json that ContentProvider can crash the process at startup.
+          google-services.json that ContentProvider crashes at process start.
           Gradle sets firebaseInitEnabled=true only when google-services.json is present.
         -->
         <provider
