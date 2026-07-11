@@ -77,6 +77,58 @@ class PhaseEPolishTest extends TestCase
         $this->actingAs($user)
             ->get(route('admin.audit.index'))
             ->assertOk()
-            ->assertSee('Audit log');
+            ->assertSee('Audit log')
+            ->assertSee('Search');
+    }
+
+    #[Test]
+    public function admin_can_search_audit_log(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $user = User::query()->where('phone', '01785636359')->firstOrFail();
+
+        $this->actingAs($user);
+        Auditor::log('expense.created', $user, ['head' => 'Salary']);
+        Auditor::log('collection.created', $user, ['flat' => '2A']);
+
+        $this->actingAs($user)
+            ->get(route('admin.audit.index', ['q' => 'expense.created']))
+            ->assertOk()
+            ->assertSee('expense.created')
+            ->assertDontSee('collection.created');
+
+        $this->actingAs($user)
+            ->get(route('admin.audit.index', ['q' => 'Salary']))
+            ->assertOk()
+            ->assertSee('expense.created');
+    }
+
+    #[Test]
+    public function admin_can_filter_audit_log_by_date_range(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $user = User::query()->where('phone', '01785636359')->firstOrFail();
+
+        $this->actingAs($user);
+        Auditor::log('old.action', $user, ['when' => 'old']);
+        Auditor::log('new.action', $user, ['when' => 'new']);
+
+        AuditLog::query()->where('action', 'old.action')->update([
+            'created_at' => '2026-06-01 10:00:00',
+            'updated_at' => '2026-06-01 10:00:00',
+        ]);
+        AuditLog::query()->where('action', 'new.action')->update([
+            'created_at' => '2026-07-11 10:00:00',
+            'updated_at' => '2026-07-11 10:00:00',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('admin.audit.index', [
+                'from' => '2026-07-01',
+                'to' => '2026-07-31',
+            ]))
+            ->assertOk()
+            ->assertSee('new.action')
+            ->assertDontSee('old.action');
     }
 }
