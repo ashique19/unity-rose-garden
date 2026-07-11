@@ -56,15 +56,17 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Category</label>
-                    <select name="category" class="form-select">
-                        <option value="">—</option>
-                        @foreach($categories as $category)
-                            <option value="{{ $category }}">{{ ucfirst($category) }}</option>
+                    <label class="form-label">Expense head</label>
+                    <select name="expense_head_id" class="form-select">
+                        <option value="">— (cash in)</option>
+                        @foreach($expenseHeads as $head)
+                            <option value="{{ $head->id }}">{{ $head->label }}</option>
                         @endforeach
-                        <option value="donation">Donation</option>
-                        <option value="collection">Collection</option>
                     </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Payee</label>
+                    <input type="text" name="payee" class="form-control" maxlength="120">
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">Note</label>
@@ -83,7 +85,8 @@
                         <th>Date</th>
                         <th>Type</th>
                         <th>Flat</th>
-                        <th>Category</th>
+                        <th>Category / head</th>
+                        <th>Payee</th>
                         <th>Note</th>
                         <th class="text-end">Amount</th>
                         <th></th>
@@ -101,7 +104,8 @@
                                 @endif
                             </td>
                             <td>{{ $entry->flat?->name ?? '—' }}</td>
-                            <td>{{ $entry->category ? ucfirst($entry->category) : '—' }}</td>
+                            <td>{{ $entry->expenseHead?->label ?? ($entry->category ? ucfirst($entry->category) : '—') }}</td>
+                            <td>{{ $entry->payee ?: '—' }}</td>
                             <td class="text-muted">{{ $entry->note ?: '—' }}</td>
                             <td class="text-end fw-semibold">{{ number_format((float) $entry->amount, 2) }}</td>
                             <td>
@@ -119,7 +123,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center text-muted py-4">No ledger entries yet.</td>
+                            <td colspan="8" class="text-center text-muted py-4">No ledger entries yet.</td>
                         </tr>
                     @endforelse
                 </tbody>

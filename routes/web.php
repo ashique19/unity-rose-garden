@@ -4,6 +4,8 @@ use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\CollectionController;
 use App\Http\Controllers\Admin\CommonWaterController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\ExpenseController;
+use App\Http\Controllers\Admin\ExpenseHeadController;
 use App\Http\Controllers\Admin\FlatBillTypeSettingController;
 use App\Http\Controllers\Admin\FlatController as AdminFlatController;
 use App\Http\Controllers\Admin\GasMeterReadingController;
@@ -97,6 +99,18 @@ Route::middleware(['auth'])->group(function () {
         Route::get('ledger', [LedgerController::class, 'index'])->name('ledger.index');
         Route::post('ledger', [LedgerController::class, 'store'])->name('ledger.store');
         Route::delete('ledger/{accountLedgerEntry}', [LedgerController::class, 'destroy'])->name('ledger.destroy');
+
+        Route::get('expense-heads', [ExpenseHeadController::class, 'index'])->name('expense-heads.index');
+        Route::post('expense-heads', [ExpenseHeadController::class, 'store'])->name('expense-heads.store');
+        Route::put('expense-heads/{expenseHead}', [ExpenseHeadController::class, 'update'])->name('expense-heads.update');
+        Route::delete('expense-heads/{expenseHead}', [ExpenseHeadController::class, 'destroy'])->name('expense-heads.destroy');
+
+        Route::get('expenses', [ExpenseController::class, 'index'])->name('expenses.index');
+        Route::get('expenses/print', [ExpenseController::class, 'printList'])->name('expenses.print-list');
+        Route::post('expenses', [ExpenseController::class, 'store'])->name('expenses.store');
+        Route::put('expenses/{expense}', [ExpenseController::class, 'update'])->name('expenses.update');
+        Route::delete('expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
+        Route::get('expenses/{expense}/print', [ExpenseController::class, 'printOne'])->name('expenses.print');
     });
 
     Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(function () {

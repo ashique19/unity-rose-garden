@@ -144,6 +144,25 @@ class PhaseCAccountsTest extends TestCase
                 ->where('flat_id', $flat->id)
                 ->exists()
         );
+
+        $collection = Collection::query()
+            ->where('monthly_statement_id', $statement->id)
+            ->where('amount', 100)
+            ->firstOrFail();
+
+        $building = Building::query()->firstOrFail();
+        $this->assertNotNull($collection->balance_before);
+        $this->assertNotNull($collection->balance_after);
+        $this->assertEqualsWithDelta(
+            (float) $collection->balance_before + 100,
+            (float) $collection->balance_after,
+            0.01
+        );
+        $this->assertEqualsWithDelta(
+            (float) $collection->balance_after,
+            $building->fresh()->balanceAmount(),
+            0.01
+        );
     }
 
     #[Test]
@@ -164,12 +183,14 @@ class PhaseCAccountsTest extends TestCase
             ])
             ->assertRedirect();
 
+        $repairHead = \App\Models\ExpenseHead::query()->where('key', 'repair')->firstOrFail();
+
         $this->actingAs($user)
             ->post(route('admin.ledger.store'), [
                 'type' => 'cash_out',
                 'amount' => 200,
                 'entry_date' => '2026-07-02',
-                'category' => 'maintenance',
+                'expense_head_id' => $repairHead->id,
                 'note' => 'Pump repair',
             ])
             ->assertRedirect();

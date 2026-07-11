@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AccountLedgerEntry;
+use App\Models\ExpenseHead;
 use App\Models\Flat;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,18 +13,10 @@ use Illuminate\View\View;
 
 class LedgerController extends Controller
 {
-    public const CASH_OUT_CATEGORIES = [
-        'maintenance',
-        'salary',
-        'utility',
-        'supplies',
-        'misc',
-    ];
-
     public function index(Request $request): View
     {
         $entries = AccountLedgerEntry::query()
-            ->with('flat')
+            ->with(['flat', 'expenseHead'])
             ->when($request->query('type'), fn ($q, $type) => $q->where('type', $type))
             ->orderByDesc('entry_date')
             ->orderByDesc('id')
@@ -35,7 +28,7 @@ class LedgerController extends Controller
         return view('admin.ledger.index', [
             'entries' => $entries,
             'flats' => $flats,
-            'categories' => self::CASH_OUT_CATEGORIES,
+            'expenseHeads' => ExpenseHead::query()->active()->ordered()->get(),
             'filterType' => $request->query('type'),
         ]);
     }
@@ -47,12 +40,26 @@ class LedgerController extends Controller
             'amount' => ['required', 'numeric', 'min:0.01'],
             'entry_date' => ['required', 'date'],
             'flat_id' => ['nullable', 'integer', 'exists:flats,id'],
+            'expense_head_id' => ['nullable', 'integer', 'exists:expense_heads,id'],
+            'payee' => ['nullable', 'string', 'max:120'],
             'category' => ['nullable', 'string', 'max:100'],
             'note' => ['nullable', 'string', 'max:255'],
         ]);
 
-        if ($data['type'] === AccountLedgerEntry::TYPE_CASH_OUT && empty($data['category'])) {
-            $data['category'] = 'misc';
+        $head = null;
+        if ($data['type'] === AccountLedgerEntry::TYPE_CASH_OUT) {
+            if (empty($data['expense_head_id'])) {
+                return back()->withErrors([
+                    'expense_head_id' => 'Select an expense head for cash out.',
+                ])->withInput();
+            }
+            if (empty($data['note'])) {
+                return back()->withErrors([
+                    'note' => 'A note is required for cash out / expenses.',
+                ])->withInput();
+            }
+            $head = ExpenseHead::query()->findOrFail($data['expense_head_id']);
+            $data['category'] = $head->label;
         }
 
         AccountLedgerEntry::query()->create([
@@ -61,6 +68,8 @@ class LedgerController extends Controller
             'entry_date' => $data['entry_date'],
             'flat_id' => $data['flat_id'] ?? null,
             'collection_id' => null,
+            'expense_head_id' => $head?->id,
+            'payee' => $data['payee'] ?? null,
             'category' => $data['category'] ?? null,
             'note' => $data['note'] ?? null,
         ]);
@@ -68,6 +77,7 @@ class LedgerController extends Controller
         \App\Support\Auditor::log('ledger.'.$data['type'], null, [
             'amount' => $data['amount'],
             'flat_id' => $data['flat_id'] ?? null,
+            'expense_head_id' => $head?->id,
             'category' => $data['category'] ?? null,
         ]);
 

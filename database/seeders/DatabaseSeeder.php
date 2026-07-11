@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             FlatSeeder::class,
             UserSeeder::class,
             ChargeTemplateSeeder::class,
+            ExpenseHeadSeeder::class,
             LegacyProductionSeeder::class,
         ]);
     }

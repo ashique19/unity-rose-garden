@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AccountLedgerEntry;
+use App\Models\Building;
 use App\Models\Collection;
 use App\Models\Flat;
 use App\Models\MonthlyStatement;
@@ -33,11 +34,13 @@ class CollectionController extends Controller
             ->values();
 
         $flats = Flat::query()->orderBy('name')->get();
+        $building = Building::query()->first();
 
         return view('admin.collections.index', [
             'selectedMonth' => $month,
             'statements' => $statements,
             'flats' => $flats,
+            'availableBalance' => $building ? $building->balanceAmount() : 0.0,
         ]);
     }
 
@@ -54,14 +57,22 @@ class CollectionController extends Controller
         $statement = MonthlyStatement::query()->with('flat')->findOrFail($data['monthly_statement_id']);
 
         DB::transaction(function () use ($data, $statement, $request) {
+            $building = Building::query()->firstOrFail();
+            $balanceBefore = $building->balanceAmount();
+            $postToLedger = $request->boolean('post_to_ledger');
+            $amount = (float) $data['amount'];
+            $balanceAfter = $postToLedger ? $balanceBefore + $amount : $balanceBefore;
+
             $collection = Collection::query()->create([
                 'monthly_statement_id' => $statement->id,
                 'amount' => $data['amount'],
                 'collected_on' => $data['collected_on'],
                 'note' => $data['note'] ?? null,
+                'balance_before' => $balanceBefore,
+                'balance_after' => $balanceAfter,
             ]);
 
-            if ($request->boolean('post_to_ledger', true)) {
+            if ($postToLedger) {
                 AccountLedgerEntry::query()->create([
                     'type' => AccountLedgerEntry::TYPE_CASH_IN,
                     'amount' => $data['amount'],
@@ -76,6 +87,9 @@ class CollectionController extends Controller
             \App\Support\Auditor::log('collection.created', $collection, [
                 'flat' => $statement->flat?->name,
                 'amount' => $data['amount'],
+                'posted_to_ledger' => $postToLedger,
+                'balance_before' => $balanceBefore,
+                'balance_after' => $balanceAfter,
             ]);
         });
 

@@ -17,7 +17,10 @@ class AccountLedgerEntry extends Model
         'entry_date',
         'flat_id',
         'collection_id',
+        'expense_id',
         'category',
+        'expense_head_id',
+        'payee',
         'note',
     ];
 
@@ -39,8 +42,23 @@ class AccountLedgerEntry extends Model
         return $this->belongsTo(Collection::class);
     }
 
+    public function expense(): BelongsTo
+    {
+        return $this->belongsTo(Expense::class);
+    }
+
+    public function expenseHead(): BelongsTo
+    {
+        return $this->belongsTo(ExpenseHead::class);
+    }
+
     public function isCashIn(): bool
     {
         return $this->type === self::TYPE_CASH_IN;
+    }
+
+    public function isCashOut(): bool
+    {
+        return $this->type === self::TYPE_CASH_OUT;
     }
 }

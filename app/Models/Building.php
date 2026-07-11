@@ -22,6 +22,11 @@ class Building extends Model
 
     public function balance(): string
     {
+        return number_format($this->balanceAmount(), 2, '.', '');
+    }
+
+    public function balanceAmount(): float
+    {
         $cashIn = (float) AccountLedgerEntry::query()
             ->where('type', AccountLedgerEntry::TYPE_CASH_IN)
             ->sum('amount');
@@ -30,9 +35,7 @@ class Building extends Model
             ->where('type', AccountLedgerEntry::TYPE_CASH_OUT)
             ->sum('amount');
 
-        $balance = (float) $this->opening_balance + $cashIn - $cashOut;
-
-        return number_format($balance, 2, '.', '');
+        return (float) $this->opening_balance + $cashIn - $cashOut;
     }
 
     /**

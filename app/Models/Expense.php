@@ -4,13 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
-class Collection extends Model
+class Expense extends Model
 {
     protected $fillable = [
-        'monthly_statement_id',
+        'expense_head_id',
         'amount',
-        'collected_on',
+        'entry_date',
+        'payee',
         'note',
         'balance_before',
         'balance_after',
@@ -20,18 +22,18 @@ class Collection extends Model
     {
         return [
             'amount' => 'decimal:2',
-            'collected_on' => 'date',
+            'entry_date' => 'date',
             'balance_before' => 'decimal:2',
             'balance_after' => 'decimal:2',
         ];
     }
 
-    public function statement(): BelongsTo
+    public function expenseHead(): BelongsTo
     {
-        return $this->belongsTo(MonthlyStatement::class, 'monthly_statement_id');
+        return $this->belongsTo(ExpenseHead::class);
     }
 
-    public function ledgerEntry(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function ledgerEntry(): HasOne
     {
         return $this->hasOne(AccountLedgerEntry::class);
     }

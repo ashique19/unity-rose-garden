@@ -48,6 +48,8 @@
               <a href="{{ route('admin.dashboard') }}">Dashboard</a>
               <a href="{{ route('admin.collections.index') }}">Collections</a>
               <a href="{{ route('admin.ledger.index') }}">Ledger</a>
+              <a href="{{ route('admin.expenses.index') }}">Expenses</a>
+              <a href="{{ route('admin.expense-heads.index') }}">Expense heads</a>
             </div>
           @endif
           @if(auth()->user()->hasAnyRole(['admin', 'secretary']))
@@ -94,6 +96,8 @@
                 <li><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
                 <li><a href="{{ route('admin.collections.index') }}">Collections</a></li>
                 <li><a href="{{ route('admin.ledger.index') }}">Ledger</a></li>
+                <li><a href="{{ route('admin.expenses.index') }}">Expenses</a></li>
+                <li><a href="{{ route('admin.expense-heads.index') }}">Expense heads</a></li>
               </ul>
             </li>
           @endif

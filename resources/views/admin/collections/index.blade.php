@@ -25,24 +25,38 @@
         @endif
 
         <div class="bg-white border rounded-3 shadow-sm p-4 mb-4">
-            <h2 class="h5 fw-bold mb-3">Add collection</h2>
-            <form method="post" action="{{ route('admin.collections.store') }}" class="row g-3">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
+                <h2 class="h5 fw-bold mb-0">Add collection</h2>
+                <div class="d-flex flex-wrap gap-3 small" id="collection-balance-preview"
+                     data-balance="{{ number_format($availableBalance, 2, '.', '') }}">
+                    <div>
+                        <span class="text-muted">Available before</span>
+                        <div class="fw-semibold">৳<span id="collection-balance-before">{{ number_format($availableBalance, 2) }}</span></div>
+                    </div>
+                    <div>
+                        <span class="text-muted">After this collection</span>
+                        <div class="fw-semibold">৳<span id="collection-balance-after">{{ number_format($availableBalance, 2) }}</span></div>
+                    </div>
+                </div>
+            </div>
+            <form method="post" action="{{ route('admin.collections.store') }}" class="row g-3" id="collection-create-form">
                 @csrf
                 <div class="col-md-4">
-                    <label class="form-label">Statement (flat)</label>
-                    <select name="monthly_statement_id" class="form-select" required @disabled($statements->isEmpty())>
-                        <option value="">{{ $statements->isEmpty() ? 'No statements this month — generate first' : 'Select flat…' }}</option>
+                    <label class="form-label" for="collection-statement">Statement (flat)</label>
+                    <select name="monthly_statement_id" id="collection-statement" class="form-select" required @disabled($statements->isEmpty())>
+                        <option value="" data-pending="">{{ $statements->isEmpty() ? 'No statements this month — generate first' : 'Select flat…' }}</option>
                         @foreach($statements as $statement)
-                            <option value="{{ $statement->id }}">
+                            @php $pending = (float) $statement->pendingAmount(); @endphp
+                            <option value="{{ $statement->id }}" data-pending="{{ number_format($pending, 2, '.', '') }}">
                                 {{ $statement->flat?->name ?? 'Flat #'.$statement->flat_id }}
-                                — pending ৳{{ number_format((float) $statement->pendingAmount(), 2) }}
+                                — pending ৳{{ number_format($pending, 2) }}
                             </option>
                         @endforeach
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Amount (৳)</label>
-                    <input type="number" step="0.01" min="0.01" name="amount" class="form-control" required>
+                    <label class="form-label" for="collection-amount">Amount (৳)</label>
+                    <input type="number" step="0.01" min="0.01" name="amount" id="collection-amount" class="form-control" required>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Collected on</label>
@@ -72,45 +86,58 @@
                         <th class="text-end">Total</th>
                         <th class="text-end">Collected</th>
                         <th class="text-end">Pending</th>
-                        <th>Payments</th>
+                        <th>Date</th>
+                        <th class="text-end">Amount</th>
+                        <th class="text-end">Before</th>
+                        <th class="text-end">After</th>
+                        <th>Note</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($statements as $statement)
-                        <tr>
-                            <td class="fw-semibold">{{ $statement->flat?->name }}</td>
-                            <td class="text-end">{{ number_format((float) $statement->totalAmount(), 2) }}</td>
-                            <td class="text-end">{{ number_format((float) $statement->collectedAmount(), 2) }}</td>
-                            <td class="text-end">{{ number_format((float) $statement->pendingAmount(), 2) }}</td>
-                            <td>
-                                @if($statement->collections->isEmpty())
-                                    <span class="text-muted">—</span>
-                                @else
-                                    <ul class="list-unstyled mb-0 small">
-                                        @foreach($statement->collections as $collection)
-                                            <li class="d-flex justify-content-between gap-2 align-items-center">
-                                                <span>
-                                                    ৳{{ number_format((float) $collection->amount, 2) }}
-                                                    on {{ $collection->collected_on?->format('d M Y') }}
-                                                    @if($collection->note)
-                                                        <span class="text-muted">({{ $collection->note }})</span>
-                                                    @endif
-                                                </span>
-                                                <form method="post" action="{{ route('admin.collections.destroy', $collection) }}"
-                                                      onsubmit="return confirm('Remove this collection?')">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button class="btn btn-sm btn-link text-danger p-0">Remove</button>
-                                                </form>
-                                            </li>
-                                        @endforeach
-                                    </ul>
-                                @endif
-                            </td>
-                        </tr>
+                        @php $collections = $statement->collections; @endphp
+                        @if($collections->isEmpty())
+                            <tr>
+                                <td class="fw-semibold">{{ $statement->flat?->name }}</td>
+                                <td class="text-end">{{ number_format((float) $statement->totalAmount(), 2) }}</td>
+                                <td class="text-end">{{ number_format((float) $statement->collectedAmount(), 2) }}</td>
+                                <td class="text-end">{{ number_format((float) $statement->pendingAmount(), 2) }}</td>
+                                <td colspan="5" class="text-muted">No payments yet</td>
+                                <td></td>
+                            </tr>
+                        @else
+                            @foreach($collections as $index => $collection)
+                                <tr>
+                                    @if($index === 0)
+                                        <td class="fw-semibold" rowspan="{{ $collections->count() }}">{{ $statement->flat?->name }}</td>
+                                        <td class="text-end" rowspan="{{ $collections->count() }}">{{ number_format((float) $statement->totalAmount(), 2) }}</td>
+                                        <td class="text-end" rowspan="{{ $collections->count() }}">{{ number_format((float) $statement->collectedAmount(), 2) }}</td>
+                                        <td class="text-end" rowspan="{{ $collections->count() }}">{{ number_format((float) $statement->pendingAmount(), 2) }}</td>
+                                    @endif
+                                    <td>{{ $collection->collected_on?->format('d M Y') ?? '—' }}</td>
+                                    <td class="text-end">{{ number_format((float) $collection->amount, 2) }}</td>
+                                    <td class="text-end">
+                                        {{ $collection->balance_before !== null ? number_format((float) $collection->balance_before, 2) : '—' }}
+                                    </td>
+                                    <td class="text-end">
+                                        {{ $collection->balance_after !== null ? number_format((float) $collection->balance_after, 2) : '—' }}
+                                    </td>
+                                    <td>{{ $collection->note ?: '—' }}</td>
+                                    <td class="text-nowrap">
+                                        <form method="post" action="{{ route('admin.collections.destroy', $collection) }}"
+                                              onsubmit="return confirm('Remove this collection?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button class="btn btn-sm btn-outline-danger">Remove</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        @endif
                     @empty
                         <tr>
-                            <td colspan="5" class="text-center text-muted py-4">
+                            <td colspan="10" class="text-center text-muted py-4">
                                 No statements for this month. Generate the month first.
                             </td>
                         </tr>
@@ -120,4 +147,47 @@
         </div>
     </div>
 </div>
+@endsection
+
+@section('js')
+<script>
+(() => {
+  const select = document.getElementById('collection-statement');
+  const amount = document.getElementById('collection-amount');
+  if (!select || !amount) return;
+
+  const preview = document.getElementById('collection-balance-preview');
+  const postCheckbox = document.getElementById('post_to_ledger');
+  const afterEl = document.getElementById('collection-balance-after');
+  const before = preview ? parseFloat(preview.dataset.balance || '0') : 0;
+
+  function formatMoney(value) {
+    return value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function updateAfter() {
+    if (!afterEl || !postCheckbox) return;
+    const value = parseFloat(amount.value || '0');
+    const hitLedger = postCheckbox.checked && !Number.isNaN(value) && value > 0;
+    afterEl.textContent = formatMoney(hitLedger ? before + value : before);
+  }
+
+  select.addEventListener('change', () => {
+    const pending = select.selectedOptions[0]?.dataset?.pending ?? '';
+    if (pending === '' || Number(pending) <= 0) {
+      amount.value = '';
+      updateAfter();
+      return;
+    }
+    amount.value = pending;
+    amount.focus();
+    amount.select();
+    updateAfter();
+  });
+
+  amount.addEventListener('input', updateAfter);
+  postCheckbox?.addEventListener('change', updateAfter);
+  updateAfter();
+})();
+</script>
 @endsection
