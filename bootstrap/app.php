@@ -14,6 +14,10 @@ return Application::configure(basePath: dirname(__DIR__))
         if (env('CODESPACES') === 'true') {
             $middleware->trustProxies(at: '*');
         }
+
+        $middleware->alias([
+            'role' => \App\Http\Middleware\EnsureUserHasRole::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

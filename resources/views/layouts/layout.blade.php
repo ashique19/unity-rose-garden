@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   
   <title>Unity Rose Garden</title>
   <!--
@@ -36,15 +37,25 @@
   <!-- ── MOBILE MENU ── -->
   <div class="mobile-menu" id="mobileMenu" role="dialog" aria-modal="true" aria-label="Navigation">
     <a href="{{ route('home') }}">Home</a>
-    <a href="{{ route('bill-history') }}">History</a>
     @if(auth()->user())
-      <a href="{{ route('flats.index') }}">Flats</a>
-      <a href="{{ route('meter-readings-and-charges.index') }}">Meter Readings & Charges</a>
-      <a href="{{ route('charge-templates.index') }}">Charge Configuration</a>
-      <a href="{{ route('generate-bill') }}">Generate Bill</a>
+      @if(auth()->user()->hasAnyRole(['admin', 'treasurer']))
+        <a href="{{ route('admin.dashboard') }}">Accounts</a>
+        <a href="{{ route('admin.collections.index') }}">Collections</a>
+        <a href="{{ route('admin.ledger.index') }}">Ledger</a>
+      @endif
+      @if(auth()->user()->hasAnyRole(['admin', 'secretary']))
+        <a href="{{ route('admin.generate.index') }}">Generate month</a>
+        <a href="{{ route('admin.gas-readings.index') }}">Gas readings</a>
+        <a href="{{ route('admin.water.index') }}">Water</a>
+        <a href="{{ route('admin.other-charges.index') }}">Other charges</a>
+        <a href="{{ route('admin.flat-bill-type-settings.index') }}">Bill type settings</a>
+        <a href="{{ route('charge-templates.index') }}">Charge templates</a>
+      @endif
+      @if(auth()->user()->isAdmin())
+        <a href="{{ route('admin.audit.index') }}">Audit log</a>
+        <a href="{{ route('bill-history') }}">Legacy history</a>
+      @endif
       <a href="{{ route('logout') }}" class="mobile-cta btn-primary">{{ auth()->user()->name }} | Logout</a>
-    @else
-      <!-- <a href="/" class="mobile-cta btn-primary">Login</a> -->
     @endif
   </div>
 
@@ -54,19 +65,24 @@
       <a href="{{ route('home') }}" class="nav-logo">Unity <span>Rose Garden</span></a>
       <ul class="nav-links" role="list">
         @if(auth()->user())
-          <a href="{{ route('flats.index') }}">Flats</a>
-          <a href="{{ route('meter-readings-and-charges.index') }}">Meter Readings & Charges</a>
-          <a href="{{ route('charge-templates.index') }}">Charge Configuration</a>
-          <a href="{{ route('generate-bill') }}">Generate Bill</a>
+          @if(auth()->user()->hasAnyRole(['admin', 'treasurer']))
+            <a href="{{ route('admin.dashboard') }}">Accounts</a>
+            <a href="{{ route('admin.collections.index') }}">Collections</a>
+            <a href="{{ route('admin.ledger.index') }}">Ledger</a>
+          @endif
+          @if(auth()->user()->hasAnyRole(['admin', 'secretary']))
+            <a href="{{ route('admin.generate.index') }}">Generate month</a>
+            <a href="{{ route('admin.gas-readings.index') }}">Gas readings</a>
+            <a href="{{ route('admin.water.index') }}">Water</a>
+            <a href="{{ route('admin.other-charges.index') }}">Other charges</a>
+            <a href="{{ route('admin.flat-bill-type-settings.index') }}">Bill type settings</a>
+            <a href="{{ route('charge-templates.index') }}">Charge templates</a>
+          @endif
+          @if(auth()->user()->isAdmin())
+            <a href="{{ route('admin.audit.index') }}">Audit log</a>
+          @endif
           <a href="{{ route('logout') }}" class="mobile-cta btn-primary">{{ auth()->user()->name }} | Logout</a>
-        @else
-          <!-- <a href="/" class="mobile-cta btn-primary">Login</a> -->
         @endif
-        <li><a href="{{ route('bill-history') }}">History</a></li>
-        <!-- <li><a href="#features">Features</a></li>
-        <li><a href="#pricing">Pricing</a></li>
-        <li><a href="#testimonials">Reviews</a></li>
-        <li><a href="#faq">FAQ</a></li> -->
       </ul>
       <div class="nav-cta">
         <!-- <a href="#" class="btn-ghost">Upcoming</a> -->

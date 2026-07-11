@@ -9,22 +9,28 @@ class CustomCharge extends Model
 {
     protected $fillable = [
         'flat_id',
+        'bill_type_id',
         'charge_month',
         'label',
         'amount',
         'notes',
     ];
 
-    protected $casts = [
-        'charge_month' => 'date',
-        'amount' => 'decimal:2',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'charge_month' => 'date',
+            'amount' => 'decimal:2',
+        ];
+    }
 
-    /**
-     * Get the flat associated with this custom charge.
-     */
     public function flat(): BelongsTo
     {
         return $this->belongsTo(Flat::class, 'flat_id');
+    }
+
+    public function billType(): BelongsTo
+    {
+        return $this->belongsTo(BillType::class);
     }
 }

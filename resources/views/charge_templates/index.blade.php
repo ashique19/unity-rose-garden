@@ -51,6 +51,16 @@
                     @csrf
                     
                     <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1" for="bill_type_id">Bill type</label>
+                        <select id="bill_type_id" name="bill_type_id" class="form-select text-sm">
+                            <option value="">Optional…</option>
+                            @foreach($billTypes as $type)
+                                <option value="{{ $type->id }}" @selected(old('bill_type_id') == $type->id)>{{ $type->label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1" for="charge_key">Charge Key / Slug</label>
                         <input type="text" id="charge_key" name="charge_key" class="form-control text-sm" placeholder="e.g. service_charge" required value="{{ old('charge_key') }}">
                         <span class="text-[10px] text-gray-400 block mt-1">Unique system identifier. No spaces (use underscores).</span>
@@ -92,6 +102,7 @@
                         <thead class="bg-gray-50 text-gray-500 uppercase font-bold text-[10px] tracking-wider border-0">
                             <tr>
                                 <th class="py-3 px-4">System Key</th>
+                                <th class="py-3 px-4">Bill type</th>
                                 <th class="py-3 px-4">Label Name</th>
                                 <th class="py-3 px-4">Default Rate</th>
                                 <th class="py-3 px-4 text-center">Scope</th>
@@ -102,6 +113,7 @@
                             @forelse($templates as $template)
                                 <tr class="hover:bg-gray-50/50 transition">
                                     <td class="px-4"><code class="text-xs bg-gray-100 px-2 py-1 rounded text-pink-600 font-mono">{{ $template->charge_key }}</code></td>
+                                    <td class="px-4 text-gray-600">{{ $template->billType?->label ?? '—' }}</td>
                                     <td class="px-4 font-semibold text-gray-700">{{ $template->label }}</td>
                                     <td class="px-4 font-medium text-gray-900">৳{{ number_format($template->default_amount, 2) }}</td>
                                     <td class="px-4 text-center">

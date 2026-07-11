@@ -1,9 +1,9 @@
 # Unity Rose Garden App — Building Accounts Architecture Plan
 
-**Status:** Decisions locked. Ready for Phase A implementation.  
+**Status:** Phase E complete on `cursor/building-accounts-phase-a-25f9`. Full A–E foundation shipped.  
 **Repo:** `ashique19/unity-rose-garden`  
 **Branch for this plan:** `cursor/building-accounts-plan-25f9`  
-**Last updated:** 2026-07-11
+**Last updated:** 2026-07-11 (Phase E complete; local DB: `unity_rose_garden`)
 
 This document is the source of truth for rebuilding the app from gas-only billing into full **billing + building accounts management**. Continue from Cursor Desktop using this file.
 
@@ -61,7 +61,7 @@ More bill types will be added later via admin (no hardcoding beyond these seeds)
 | 6 | Water | Common bill ÷ **N water-enabled flats** (e.g. 1 disabled → ÷17) |
 | 7 | Auth | **Role-based**: `admin`, `secretary`, `treasurer` (+ public) |
 | 8 | Enable/disable | **Per flat × bill type** (not only per generated line) |
-| 9 | Legacy data | Build new app first; **migrate old readings/bills once** at the end |
+| 9 | Legacy data | **Seed from** `production_database.sql` into new models (small volume); no separate late import |
 | 10 | Flat names | `2A`…`10B` as above (18 flats) |
 | 11 | Flat contact | **Name** + **11-digit phone** per flat |
 | 12 | Seed bill types | Gas, Water, Cleaner, Common electricity |
@@ -166,21 +166,35 @@ Home → list of 18 flats
 
 ## 6. Legacy data strategy
 
-**Do not migrate during rebuild.**
+**Decision (locked):** Volume is small → **use production data as seeders** for the new app. Do **not** wait for a separate Phase E import, and do **not** load `production_database.sql` raw into the new schema.
 
-Current app has previous months’ meter readings and gas bills (`unity_rose_garden.sql`, existing tables). Keep that dump as the historical source.
+Source file: **`./production_database.sql`** (phpMyAdmin dump from `pokaco5_unity`, 2026-07-11).
 
-When the new app is feature-complete:
+**What’s in the dump (legacy tables with data):**
 
-1. Artisan import command maps flats by name (`2A`, …).  
-2. Import readings → `GasMeterReading`.  
-3. Import bills/details → `MonthlyStatement` + gas `StatementLine`.  
-4. Import custom charges if any → other lines.  
-5. Default all `FlatBillTypeSetting` enabled.  
-6. Best-effort: old paid → one `Collection`.  
-7. Validate a few months’ totals, then cut over.
+| Table | Content |
+|-------|---------|
+| `flats` | 18 units with `name` + `status` (no contact/phone yet) |
+| `meter_readings` | Per-flat readings |
+| `bills` | Gas bills for **May 2026** and **June 2026** |
+| `bill_details` | Per-flat lines with readings, usage, `payment_status` (`paid`/`unpaid`) |
+| `users` | Phone-auth admin (`Ashique` / `01785636359`) |
+| Laravel infra | `cache`, `jobs`, `sessions`, `migrations`, … |
 
-Until then, develop against seed data only.
+No custom charges / charge templates in this export.
+
+### Seed mapping (Phase A)
+
+Seeders (or a dedicated `LegacyProductionSeeder`) transform dump facts into the **new** models:
+
+1. Flats by name `2A`…`10B`; map legacy `status=offline` → gas `FlatBillTypeSetting.enabled = false` (`3A`, `5A`, `5B`); other bill types default enabled. Placeholder `contact_name` + 11-digit `phone` until real contacts exist.  
+2. Meter readings → `GasMeterReading` (confirmed values; no OCR fields required).  
+3. Bills + bill_details → `MonthlyStatement` + gas `StatementLine` for May/June 2026 (snapshot qty/rate/amount from dump).  
+4. `payment_status = paid` → one `Collection` per paid detail (optional in Phase A if collections table not yet present — then Phase C).  
+5. Seed admin user from dump phone + password hash; attach `admin` role.  
+6. Also seed building, bill types, roles as usual.
+
+Keep `production_database.sql` in the repo as the human-readable source of truth for those seed values (or parse it in the seeder). Prefer explicit PHP seed arrays derived from the dump over `DB::unprepared` of the whole file.
 
 ---
 
@@ -190,11 +204,12 @@ Legacy Laravel app (gas-focused):
 
 - Models: `Flat`, `MeterReading`, `Bill`, `BillDetail`, `CustomCharge`, `ChargeTemplate`, `BillItem`, `User`
 - Phone login; many public read routes; write routes behind `auth`
+- Production data: `./production_database.sql` — May/June 2026 gas bills; flats `2A`…`10B` with `status` online/offline (`3A`, `5A`, `5B` offline)
 - Schema drift: code uses `flats.status`, `bill_details.amount_due` / `payment_status` without matching migrations
-- Custom charges UI exists but is not fully wired into bill totals
+- Custom charges UI exists but is not fully wired into bill totals (and not present in the production dump)
 - Broken bits: `Flat::meterReeadings()` wrong namespace; missing `showByMonth`; example tests only
 
-**Phase A should introduce new tables/models** rather than stretching the old `Bill` / `BillDetail` design. Old code can remain until cutover; prefer parallel new routes/controllers under a clear structure.
+**Phase A should introduce new tables/models** rather than stretching the old `Bill` / `BillDetail` design. Old code can remain until cutover; prefer parallel new routes/controllers under a clear structure. Seed the new schema from `production_database.sql` (mapped), not by restoring the dump as-is.
 
 ---
 
@@ -218,12 +233,13 @@ Deliverables:
 
 2. **Seeders**
    - Building: Unity Rose Garden + default m³→kg rate (e.g. 2.04)
-   - Flats: `2A`…`10B` with placeholder `contact_name` + 11-digit `phone` (replace with real contacts later)
+   - Flats: `2A`…`10B` from production; offline flats → gas disabled; placeholder contact/phone
    - Bill types: gas, water, cleaner, common_electricity
-   - FlatBillTypeSetting: all enabled for all flats
+   - FlatBillTypeSetting: enabled per rules above
    - Roles: admin, secretary, treasurer
-   - Demo admin user (phone-based)
-   - Optional: 1–2 demo statements with sample lines for UI
+   - Admin user from production (`01785636359`)
+   - **Production history:** May/June 2026 gas readings + statements (+ paid → Collection if table exists)
+   - Source: derive from `./production_database.sql`
 
 3. **Auth**
    - Keep phone login
@@ -243,7 +259,7 @@ Deliverables:
    - Public flat list / month view returns 200
    - Water divisor helper unit test: 18 enabled → ÷18; 1 disabled → ÷17
 
-**Out of scope for Phase A:** Gemini, cashbook, collections UI, common water entry, month generate, data import.
+**Out of scope for Phase A:** Gemini, cashbook UI, common water entry, month generate. Collections table may be stubbed only if needed for paid May bills.
 
 ### Phase B — Admin billing
 
@@ -262,10 +278,10 @@ Deliverables:
 
 - Photo capture/upload + Gemini suggest + confirm  
 
-### Phase E — Import + polish
+### Phase E — Polish
 
-- Artisan migrator from old SQL/DB  
 - Print/PDF, audit log, permission hardening  
+- (Legacy import folded into Phase A seeders — no separate migrator required unless more history appears later)  
 
 ---
 
@@ -317,10 +333,10 @@ Helper (Phase A or B):
 2. Open this file: `docs/BUILDING_ACCOUNTS_PLAN.md`.  
 3. Prompt example:
 
-   > Implement **Phase A** from `docs/BUILDING_ACCOUNTS_PLAN.md`. Follow locked decisions. Create branch `cursor/building-accounts-phase-a-25f9`. Do not migrate legacy data yet.
+   > Implement **Phase A** from `docs/BUILDING_ACCOUNTS_PLAN.md`. Follow locked decisions. Create branch `cursor/building-accounts-phase-a-25f9`. Seed from `production_database.sql` into the new schema (do not restore the dump raw).
 
 4. After Phase A PR merges, proceed Phase B → C → D → E in order.  
-5. Do not delete old billing controllers until Phase E cutover unless they conflict; prefer parallel new public routes first.
+5. Do not delete old billing controllers until cutover unless they conflict; prefer parallel new public routes first.
 
 ---
 
@@ -336,4 +352,4 @@ Helper (Phase A or B):
 
 ## 12. One-line summary
 
-Rebuild around **per-flat monthly statements**, **per–bill-type participation**, **role-based admin**, and a **building cashbook**; flats are `2A`…`10B` with contact name + 11-digit phone; ship Phase A foundation first; **import old gas history only after** the new app works.
+Rebuild around **per-flat monthly statements**, **per–bill-type participation**, **role-based admin**, and a **building cashbook**; flats are `2A`…`10B` with contact name + 11-digit phone; ship Phase A foundation first; **seed May/June 2026 gas history from** `production_database.sql` into the new models.

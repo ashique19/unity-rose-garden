@@ -21,18 +21,12 @@ return new class extends Migration
         // 2. Exceptional / Custom Charges Table (Flat & Month Specific)
         Schema::create('custom_charges', function (Blueprint $table) {
             $table->id();
-            $table->integer('flat_id');
+            $table->foreignId('flat_id')->constrained()->cascadeOnDelete();
             $table->date('charge_month');        // Maps to the billing month (e.g., '2026-07-01')
             $table->string('label');             // In case of completely custom ad-hoc notes
             $table->decimal('amount', 10, 2);
             $table->text('notes')->nullable();   // Reason: "Damaged common area pipe repair"
             $table->timestamps();
-
-            // Native Foreign Key Constraint matching your dump styling
-            $table->foreign('flat_id')
-                  ->references('id')
-                  ->on('flats')
-                  ->onDelete('cascade');
         });
     }
 

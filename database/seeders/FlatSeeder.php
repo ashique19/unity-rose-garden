@@ -2,36 +2,70 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\BillType;
+use App\Models\Flat;
+use App\Models\FlatBillTypeSetting;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 class FlatSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
+     * Production flats from production_database.sql (ids preserved by insert order).
+     * Offline flats: 3A, 5A, 5B → gas disabled.
      */
     public function run(): void
     {
-        DB::table('flats')->insert([
-            ['name'=>'2A'],
-            ['name'=>'2B'],
-            ['name'=>'3A'],
-            ['name'=>'3B'],
-            ['name'=>'4A'],
-            ['name'=>'4B'],
-            ['name'=>'5A'],
-            ['name'=>'5B'],
-            ['name'=>'6A'],
-            ['name'=>'6B'],
-            ['name'=>'7A'],
-            ['name'=>'7B'],
-            ['name'=>'8A'],
-            ['name'=>'8B'],
-            ['name'=>'9A'],
-            ['name'=>'9B'],
-            ['name'=>'10A'],
-            ['name'=>'10B'],
-        ]);
+        $flats = [
+            ['name' => '2A', 'status' => 'online'],
+            ['name' => '2B', 'status' => 'online'],
+            ['name' => '3A', 'status' => 'offline'],
+            ['name' => '3B', 'status' => 'online'],
+            ['name' => '4A', 'status' => 'online'],
+            ['name' => '4B', 'status' => 'online'],
+            ['name' => '5A', 'status' => 'offline'],
+            ['name' => '5B', 'status' => 'offline'],
+            ['name' => '6A', 'status' => 'online'],
+            ['name' => '6B', 'status' => 'online'],
+            ['name' => '7A', 'status' => 'online'],
+            ['name' => '7B', 'status' => 'online'],
+            ['name' => '8A', 'status' => 'online'],
+            ['name' => '8B', 'status' => 'online'],
+            ['name' => '9A', 'status' => 'online'],
+            ['name' => '9B', 'status' => 'online'],
+            ['name' => '10A', 'status' => 'online'],
+            ['name' => '10B', 'status' => 'online'],
+        ];
+
+        foreach ($flats as $index => $data) {
+            $flatNumber = $index + 1;
+            Flat::query()->updateOrCreate(
+                ['name' => $data['name']],
+                [
+                    'contact_name' => 'Resident '.$data['name'],
+                    'phone' => sprintf('0170000%04d', $flatNumber),
+                    'status' => $data['status'],
+                ]
+            );
+        }
+
+        $billTypes = BillType::query()->get();
+        $gasType = $billTypes->firstWhere('key', 'gas');
+
+        foreach (Flat::query()->orderBy('id')->get() as $flat) {
+            foreach ($billTypes as $billType) {
+                $enabled = true;
+                if ($gasType && $billType->id === $gasType->id && $flat->status === 'offline') {
+                    $enabled = false;
+                }
+
+                FlatBillTypeSetting::query()->updateOrCreate(
+                    [
+                        'flat_id' => $flat->id,
+                        'bill_type_id' => $billType->id,
+                    ],
+                    ['enabled' => $enabled]
+                );
+            }
+        }
     }
 }

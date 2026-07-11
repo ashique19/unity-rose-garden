@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BillType;
 use App\Models\ChargeTemplate;
 use Illuminate\Http\Request;
 
@@ -9,20 +10,22 @@ class ChargeTemplateController extends Controller
 {
     public function index()
     {
-        $templates = ChargeTemplate::orderBy('created_at', 'desc')->get();
-        return view('charge_templates.index', compact('templates'));
+        $templates = ChargeTemplate::query()->with('billType')->orderBy('created_at', 'desc')->get();
+        $billTypes = BillType::query()->ordered()->whereNotIn('key', ['gas', 'water'])->get();
+
+        return view('charge_templates.index', compact('templates', 'billTypes'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'charge_key'       => 'required|alpha_dash|unique:charge_templates,charge_key',
-            'label'            => 'required|string|max:255',
-            'default_amount'   => 'required|numeric|min:0',
+            'bill_type_id' => 'nullable|integer|exists:bill_types,id',
+            'charge_key' => 'required|alpha_dash|unique:charge_templates,charge_key',
+            'label' => 'required|string|max:255',
+            'default_amount' => 'required|numeric|min:0',
             'is_building_wide' => 'boolean',
         ]);
 
-        // Explicitly set boolean check for checkbox state
         $validated['is_building_wide'] = $request->has('is_building_wide');
 
         ChargeTemplate::create($validated);
@@ -33,9 +36,10 @@ class ChargeTemplateController extends Controller
     public function update(Request $request, ChargeTemplate $chargeTemplate)
     {
         $validated = $request->validate([
-            'charge_key'       => 'required|alpha_dash|unique:charge_templates,charge_key,' . $chargeTemplate->id,
-            'label'            => 'required|string|max:255',
-            'default_amount'   => 'required|numeric|min:0',
+            'bill_type_id' => 'nullable|integer|exists:bill_types,id',
+            'charge_key' => 'required|alpha_dash|unique:charge_templates,charge_key,'.$chargeTemplate->id,
+            'label' => 'required|string|max:255',
+            'default_amount' => 'required|numeric|min:0',
             'is_building_wide' => 'boolean',
         ]);
 
@@ -49,6 +53,7 @@ class ChargeTemplateController extends Controller
     public function destroy(ChargeTemplate $chargeTemplate)
     {
         $chargeTemplate->delete();
+
         return redirect()->route('charge-templates.index')->with('success', 'Charge template deleted successfully!');
     }
 }
