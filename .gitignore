@@ -24,3 +24,14 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Capacitor / Android local
+/android/local.properties
+/android/.gradle/
+/android/app/build/
+/android/build/
+/android/captures/
+/android/.idea/
+/android/*.iml
+/android/app/google-services.json
+/storage/app/firebase-service-account.json

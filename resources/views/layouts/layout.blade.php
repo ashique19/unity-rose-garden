@@ -34,7 +34,7 @@
 </head>
 <body>
 
-  <!-- ── MOBILE DRAWER ── -->
+  <!-- â”€â”€ MOBILE DRAWER â”€â”€ -->
   <div class="mobile-drawer" id="mobileMenu" aria-hidden="true">
     <button type="button" class="mobile-drawer-backdrop" id="mobileDrawerBackdrop" aria-label="Close menu"></button>
     <aside class="mobile-drawer-panel" role="dialog" aria-modal="true" aria-label="Navigation">
@@ -77,13 +77,13 @@
 
       @if(auth()->user())
         <div class="mobile-drawer-footer">
-          <a href="{{ route('logout') }}" class="mobile-cta btn-primary">{{ auth()->user()->name }} · Logout</a>
+          <a href="{{ route('logout') }}" class="mobile-cta btn-primary">{{ auth()->user()->name }} Â· Logout</a>
         </div>
       @endif
     </aside>
   </div>
 
-  <!-- ── 1. NAV ── -->
+  <!-- â”€â”€ 1. NAV â”€â”€ -->
   <nav class="site-nav" id="mainNav" role="navigation" aria-label="Main navigation">
     <div class="nav-inner">
       <a href="{{ route('home') }}" class="nav-logo">Unity <span>Rose Garden</span></a>
@@ -128,7 +128,7 @@
       </ul>
       <div class="nav-cta">
         @if(auth()->user())
-          <a href="{{ route('logout') }}" class="btn-primary">{{ auth()->user()->name }} · Logout</a>
+          <a href="{{ route('logout') }}" class="btn-primary">{{ auth()->user()->name }} Â· Logout</a>
         @endif
       </div>
       <button class="nav-hamburger" id="hamburger" aria-label="Toggle menu" aria-expanded="false" type="button">
@@ -142,7 +142,7 @@
   </main>
 
 
-  <!-- ── 12. FOOTER ── -->
+  <!-- â”€â”€ 12. FOOTER â”€â”€ -->
   <footer class="footer">
     <div class="container">
       <div class="footer-grid">
@@ -153,7 +153,7 @@
       </div>
       <div class="footer-bottom">
         <div class="footer-copy">
-          © 2026 Unity Rose Garden Association. Developed by <em>Crazy4 of Unity Rose Garden</em>
+          Â© 2026 Unity Rose Garden Association. Developed by <em>Crazy4 of Unity Rose Garden</em>
         </div>
         <!-- <div class="footer-legal">
           <a href="#">Privacy Policy</a>
@@ -170,6 +170,16 @@
 <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
   <script src="/js/template.js"></script>
   
+  
+  <script>
+    if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
+      var s = document.createElement('script');
+      s.src = '/js/capacitor-push.js';
+      s.defer = true;
+      document.body.appendChild(s);
+    }
+  </script>
   @yield('js')
 </body>
 </html>
+

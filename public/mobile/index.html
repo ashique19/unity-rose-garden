@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Unity Rose Garden</title>
+  <style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      font-family: "DM Sans", system-ui, sans-serif;
+      background: linear-gradient(160deg, #1a3a2a 0%, #2d5a40 55%, #1a3a2a 100%);
+      color: #f4f7f5;
+    }
+    .wrap {
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      text-align: center;
+    }
+    h1 {
+      font-family: Georgia, "Playfair Display", serif;
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+      letter-spacing: 0.02em;
+    }
+    p { margin: 0; opacity: 0.85; font-size: 0.95rem; max-width: 22rem; line-height: 1.45; }
+    .pulse {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #8fbc8f; margin: 1.5rem auto 0;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.35; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.15); }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Unity Rose Garden</h1>
+    <p>Connecting to the building accounts app&hellip;</p>
+    <div class="pulse" aria-hidden="true"></div>
+    <p style="margin-top:1.5rem;font-size:0.8rem;opacity:0.65">
+      If this screen stays visible, set <code>CAPACITOR_SERVER_URL</code> and run <code>npx cap sync android</code>.
+      See <code>docs/ANDROID_APK.md</code>.
+    </p>
+  </div>
+  <script src="./capacitor-bridge.js"></script>
+</body>
+</html>

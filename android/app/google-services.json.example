@@ -1,0 +1,3 @@
+Place your Firebase `google-services.json` in this folder (`android/app/google-services.json`).
+
+Do not commit the real file — it is gitignored. See `docs/ANDROID_APK.md` and `android-firebase/README.md`.

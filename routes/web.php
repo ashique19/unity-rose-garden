@@ -16,7 +16,9 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\BillGenerator;
 use App\Http\Controllers\ChargeTemplateController;
+use App\Http\Controllers\DeviceTokenController;
 use App\Http\Controllers\FlatController;
+use App\Http\Controllers\MeterReadingAndChargesController;
 use App\Http\Controllers\Public\FlatController as PublicFlatController;
 use App\Http\Controllers\Public\HomeController;
 use App\Http\Controllers\Public\StatementController;
@@ -42,11 +44,14 @@ Route::get('/flats/{flat}/statements/others', [StatementController::class, 'othe
 Route::get('/flats/{flat}/statements/print', [StatementPrintController::class, 'show'])->name('public.statements.print');
 
 Route::middleware(['auth'])->group(function () {
-    // Legacy tools — admin only until cutover
+    Route::post('device-tokens', [DeviceTokenController::class, 'store'])->name('device-tokens.store');
+    Route::delete('device-tokens', [DeviceTokenController::class, 'destroy'])->name('device-tokens.destroy');
+
+    // Legacy tools â€” admin only until cutover
     Route::middleware(['role:admin'])->group(function () {
-        Route::resource('meter-readings-and-charges', \App\Http\Controllers\MeterReadingAndChargesController::class)
+        Route::resource('meter-readings-and-charges', MeterReadingAndChargesController::class)
             ->parameters(['meter-readings-and-charges' => 'meterReading']);
-        Route::get('meter-readings-and-charges/by-month/{date}', [\App\Http\Controllers\MeterReadingAndChargesController::class, 'showByMonth']);
+        Route::get('meter-readings-and-charges/by-month/{date}', [MeterReadingAndChargesController::class, 'showByMonth']);
 
         Route::get('generate-bill', [BillGenerator::class, 'index'])->name('generate-bill');
         Route::post('generate-bill', [BillGenerator::class, 'store'])->name('generate-bill.store');
