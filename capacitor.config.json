@@ -1,0 +1,23 @@
+{
+  "appId": "com.unityrosegarden.app",
+  "appName": "Unity Rose Garden",
+  "webDir": "public/mobile",
+  "server": {
+    "url": "http://10.0.2.2:8000",
+    "cleartext": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#1a3a2a",
+      "showSpinner": false
+    },
+    "PushNotifications": {
+      "presentationOptions": [
+        "badge",
+        "sound",
+        "alert"
+      ]
+    }
+  }
+}
