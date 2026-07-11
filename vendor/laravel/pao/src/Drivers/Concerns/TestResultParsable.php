@@ -9,15 +9,19 @@ use PHPUnit\Event\Code\TestMethod;
 use PHPUnit\Event\Code\Throwable;
 use PHPUnit\Event\Facade as EventFacade;
 use PHPUnit\Event\Test\Errored;
+use PHPUnit\Event\Test\Failed;
 use PHPUnit\Event\Test\Finished;
 use PHPUnit\Event\Test\FinishedSubscriber;
 use PHPUnit\Event\Test\Prepared;
 use PHPUnit\Event\Test\PreparedSubscriber;
+use PHPUnit\Event\TestRunner\ExecutionFinished;
+use PHPUnit\Event\TestRunner\ExecutionFinishedSubscriber;
 use PHPUnit\Event\TestRunner\ExecutionStarted;
 use PHPUnit\Event\TestRunner\ExecutionStartedSubscriber;
 use PHPUnit\TestRunner\TestResult\Facade as TestResultFacade;
 use PHPUnit\TestRunner\TestResult\Issues\Issue;
 use PHPUnit\TestRunner\TestResult\TestResult;
+use PHPUnit\TextUI\Configuration\Registry as ConfigurationRegistry;
 
 /**
  * @internal
@@ -27,6 +31,34 @@ use PHPUnit\TestRunner\TestResult\TestResult;
 trait TestResultParsable
 {
     public ?TestResult $testResult = null;
+
+    private bool $executionFinished = false;
+
+    protected function registerExecutionFinishedSubscriber(): void
+    {
+        try {
+            $markFinished = function (): void {
+                $this->executionFinished = true;
+            };
+
+            EventFacade::instance()->registerSubscriber(
+                new readonly class($markFinished) implements ExecutionFinishedSubscriber
+                {
+                    /**
+                     * @param  \Closure(): void  $markFinished
+                     */
+                    public function __construct(private \Closure $markFinished) {}
+
+                    public function notify(ExecutionFinished $event): void
+                    {
+                        ($this->markFinished)();
+                    }
+                },
+            );
+        } catch (\Throwable) {
+            //
+        }
+    }
 
     protected function startTimer(): void
     {
@@ -102,6 +134,10 @@ trait TestResultParsable
             return WrapperRunner::$result;
         }
 
+        if (! $this->executionFinished) {
+            return null;
+        }
+
         try {
             return TestResultFacade::result();
         } catch (\Throwable) {
@@ -125,6 +161,8 @@ trait TestResultParsable
         $notices = $testResult->numberOfNotices();
         $risky = $testResult->numberOfTestsWithTestConsideredRiskyEvents();
         $ignoredByBaseline = $testResult->numberOfIssuesIgnoredByBaseline();
+        $hasNoTests = $tests === 0;
+        $noTestsFoundAndFailsOnEmpty = $hasNoTests && $this->failsOnEmptyTestSuite();
 
         $durationMs = ProfileCollector::durationMs();
 
@@ -132,16 +170,30 @@ trait TestResultParsable
         $failureDetails = [];
 
         foreach ($testResult->testFailedEvents() as $event) {
-            $test = $event->test();
             $throwable = $event->throwable();
             $message = trim($throwable->description());
-            $file = $test->file();
-            $line = $test instanceof TestMethod ? $test->line() : 0;
 
-            [$file, $line] = $this->resolveTestLocation($file, $line, $throwable);
+            if ($event instanceof Failed) {
+                $test = $event->test();
+                $file = $test->file();
+                $line = $test instanceof TestMethod ? $test->line() : 0;
+
+                [$file, $line] = $this->resolveTestLocation($file, $line, $throwable);
+
+                $failureDetails[] = [
+                    'test' => $test instanceof TestMethod ? $test->nameWithClass() : $test->id(),
+                    'file' => $file,
+                    'line' => $line,
+                    'message' => $message,
+                ];
+
+                continue;
+            }
+
+            [$file, $line] = $this->resolveTestLocation('', 0, $throwable);
 
             $failureDetails[] = [
-                'test' => $test instanceof TestMethod ? $test->nameWithClass() : $test->id(),
+                'test' => $event->testClassName().'::'.$event->calledMethod()->methodName(),
                 'file' => $file,
                 'line' => $line,
                 'message' => $message,
@@ -172,12 +224,16 @@ trait TestResultParsable
 
         /** @var array<string, mixed> $result */
         $result = [
-            'result' => $testResult->wasSuccessful() ? 'passed' : 'failed',
+            'result' => $testResult->wasSuccessful() && ! $noTestsFoundAndFailsOnEmpty ? 'passed' : 'failed',
             'tests' => $tests,
             'passed' => $tests - $failedCount - $erroredCount - $skipped,
             'assertions' => $assertions,
             'duration_ms' => $durationMs,
         ];
+
+        if ($hasNoTests) {
+            $result['raw'] = ['No tests found.'];
+        }
 
         if ($failedCount > 0) {
             $result['failed'] = $failedCount;
@@ -241,6 +297,15 @@ trait TestResultParsable
         }
 
         return $result;
+    }
+
+    private function failsOnEmptyTestSuite(): bool
+    {
+        try {
+            return ConfigurationRegistry::get()->failOnEmptyTestSuite();
+        } catch (\Throwable) {
+            return true;
+        }
     }
 
     /**

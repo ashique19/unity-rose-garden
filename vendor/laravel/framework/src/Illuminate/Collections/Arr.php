@@ -556,13 +556,7 @@ class Arr
             return false;
         }
 
-        foreach ($keys as $key) {
-            if (! static::has($array, $key)) {
-                return false;
-            }
-        }
-
-        return true;
+        return array_all($keys, fn ($key) => static::has($array, $key));
     }
 
     /**
@@ -588,13 +582,7 @@ class Arr
             return false;
         }
 
-        foreach ($keys as $key) {
-            if (static::has($array, $key)) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any($keys, fn ($key) => static::has($array, $key));
     }
 
     /**
@@ -948,7 +936,7 @@ class Arr
      * @param  array  $array
      * @param  int|null  $number
      * @param  bool  $preserveKeys
-     * @return mixed
+     * @return ($number is null ? mixed : array)
      *
      * @throws \InvalidArgumentException
      */

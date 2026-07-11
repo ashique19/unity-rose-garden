@@ -13,7 +13,7 @@ use Illuminate\Support\Testing\Fakes\QueueFake;
  * @method static void failing(mixed $callback)
  * @method static void starting(mixed $callback)
  * @method static void stopping(mixed $callback)
- * @method static void route(array|string $class, string|null $queue = null, string|null $connection = null)
+ * @method static void route(array|string $class, \UnitEnum|string|null $queue = null, \UnitEnum|string|null $connection = null)
  * @method static bool connected(\UnitEnum|string|null $name = null)
  * @method static \Illuminate\Contracts\Queue\Queue connection(\UnitEnum|string|null $name = null)
  * @method static void pause(string $connection, string $queue)
@@ -76,10 +76,12 @@ use Illuminate\Support\Testing\Fakes\QueueFake;
  * @method static \Illuminate\Support\Collection allDelayedJobs()
  * @method static \Illuminate\Support\Collection allReservedJobs()
  * @method static bool shouldFakeJob(object $job)
+ * @method static void reserve(\Closure|string|object $job, \UnitEnum|string|null $queue = null)
  * @method static array pushedJobs()
  * @method static array rawPushes()
  * @method static \Illuminate\Support\Testing\Fakes\QueueFake serializeAndRestore(bool $serializeAndRestore = true)
  * @method static void releaseUniqueJobLocks()
+ * @method static void clearReserved()
  *
  * @see \Illuminate\Queue\QueueManager
  * @see \Illuminate\Queue\Queue

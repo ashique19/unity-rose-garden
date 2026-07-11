@@ -4,7 +4,7 @@
 <div class="features-section pt-20 pb-20">
     <div class="container">
         <div class="mb-5 text-center text-md-start">
-            <h1 class="fw-bold text-dark mb-1">Unity Rose Garden</h1>
+            <h1 class="fw-bold text-dark mb-1">Flats</h1>
             <p class="text-muted fs-5 mb-0">Monthly flat statements</p>
         </div>
 

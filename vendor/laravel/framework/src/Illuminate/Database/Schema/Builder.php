@@ -285,13 +285,7 @@ class Builder
     {
         $tableColumns = array_map(strtolower(...), $this->getColumnListing($table));
 
-        foreach ($columns as $column) {
-            if (! in_array(strtolower($column), $tableColumns)) {
-                return false;
-            }
-        }
-
-        return true;
+        return array_all($columns, fn ($column) => in_array(strtolower($column), $tableColumns));
     }
 
     /**
@@ -723,7 +717,7 @@ class Builder
             return call_user_func($this->resolver, $connection, $table, $callback);
         }
 
-        return Container::getInstance()->make(Blueprint::class, compact('connection', 'table', 'callback'));
+        return Container::getInstance()->make(Blueprint::class, ['connection' => $connection, 'table' => $table, 'callback' => $callback]);
     }
 
     /**

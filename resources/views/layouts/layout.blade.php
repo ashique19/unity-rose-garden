@@ -60,42 +60,44 @@
   </div>
 
   <!-- ── 1. NAV ── -->
-  <nav class="nav" id="mainNav" role="navigation" aria-label="Main navigation">
+  <nav class="site-nav" id="mainNav" role="navigation" aria-label="Main navigation">
     <div class="nav-inner">
       <a href="{{ route('home') }}" class="nav-logo">Unity <span>Rose Garden</span></a>
       <ul class="nav-links" role="list">
         @if(auth()->user())
           @if(auth()->user()->hasAnyRole(['admin', 'treasurer']))
-            <a href="{{ route('admin.dashboard') }}">Accounts</a>
-            <a href="{{ route('admin.collections.index') }}">Collections</a>
-            <a href="{{ route('admin.ledger.index') }}">Ledger</a>
+            <li><a href="{{ route('admin.dashboard') }}">Accounts</a></li>
+            <li><a href="{{ route('admin.collections.index') }}">Collections</a></li>
+            <li><a href="{{ route('admin.ledger.index') }}">Ledger</a></li>
           @endif
           @if(auth()->user()->hasAnyRole(['admin', 'secretary']))
-            <a href="{{ route('admin.generate.index') }}">Generate month</a>
-            <a href="{{ route('admin.gas-readings.index') }}">Gas readings</a>
-            <a href="{{ route('admin.water.index') }}">Water</a>
-            <a href="{{ route('admin.other-charges.index') }}">Other charges</a>
-            <a href="{{ route('admin.flat-bill-type-settings.index') }}">Bill type settings</a>
-            <a href="{{ route('charge-templates.index') }}">Charge templates</a>
+            <li><a href="{{ route('admin.generate.index') }}">Generate month</a></li>
+            <li><a href="{{ route('admin.gas-readings.index') }}">Gas readings</a></li>
+            <li><a href="{{ route('admin.water.index') }}">Water</a></li>
+            <li><a href="{{ route('admin.other-charges.index') }}">Other charges</a></li>
+            <li><a href="{{ route('admin.flat-bill-type-settings.index') }}">Bill type settings</a></li>
+            <li><a href="{{ route('charge-templates.index') }}">Charge templates</a></li>
           @endif
           @if(auth()->user()->isAdmin())
-            <a href="{{ route('admin.audit.index') }}">Audit log</a>
+            <li><a href="{{ route('admin.audit.index') }}">Audit log</a></li>
           @endif
-          <a href="{{ route('logout') }}" class="mobile-cta btn-primary">{{ auth()->user()->name }} | Logout</a>
         @endif
       </ul>
       <div class="nav-cta">
-        <!-- <a href="#" class="btn-ghost">Upcoming</a> -->
-        <!-- <a href="#" class="btn-primary">Start Free Trial</a> -->
+        @if(auth()->user())
+          <a href="{{ route('logout') }}" class="btn-primary">{{ auth()->user()->name }} · Logout</a>
+        @endif
       </div>
-      <button class="nav-hamburger" id="hamburger" aria-label="Toggle menu" aria-expanded="false">
+      <button class="nav-hamburger" id="hamburger" aria-label="Toggle menu" aria-expanded="false" type="button">
         <span></span><span></span><span></span>
       </button>
     </div>
   </nav>
 
-  @yield('content')
-  
+  <main class="site-main">
+    @yield('content')
+  </main>
+
 
   <!-- ── 12. FOOTER ── -->
   <footer class="footer">
