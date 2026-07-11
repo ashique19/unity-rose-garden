@@ -21,9 +21,20 @@ This document is the source of truth for rebuilding the app from gas-only billin
 
 ### Flat naming (locked)
 
+G+9 building; residential flats start at floor 2 (no `1A`/`1B`):
+
 ```
-1A, 1B, 2A, 2B, 3A, 3B, 4A, 4B, 5A, 5B, 6A, 6B, 7A, 7B, 8A, 8B, 9A, 9B
+2A, 2B, 3A, 3B, 4A, 4B, 5A, 5B, 6A, 6B, 7A, 7B, 8A, 8B, 9A, 9B, 10A, 10B
 ```
+
+### Flat contact (locked)
+
+Each flat stores:
+
+| Field | Rule |
+|-------|------|
+| **Contact person name** | Required string |
+| **Phone** | **11-digit** phone number (Bangladesh-style, e.g. `017XXXXXXXX`) |
 
 ### Initial bill types (locked)
 
@@ -51,8 +62,9 @@ More bill types will be added later via admin (no hardcoding beyond these seeds)
 | 7 | Auth | **Role-based**: `admin`, `secretary`, `treasurer` (+ public) |
 | 8 | Enable/disable | **Per flat × bill type** (not only per generated line) |
 | 9 | Legacy data | Build new app first; **migrate old readings/bills once** at the end |
-| 10 | Flat names | `1A`…`9B` as above |
-| 11 | Seed bill types | Gas, Water, Cleaner, Common electricity |
+| 10 | Flat names | `2A`…`10B` as above (18 flats) |
+| 11 | Flat contact | **Name** + **11-digit phone** per flat |
+| 12 | Seed bill types | Gas, Water, Cleaner, Common electricity |
 
 ### Participation rules (critical)
 
@@ -85,7 +97,7 @@ User *──* Role
 | Entity | Purpose |
 |--------|---------|
 | **Building** | Singleton config: name, m³→kg conversion rate, opening balance |
-| **Flat** | 18 units (`1A`…`9B`) |
+| **Flat** | 18 units (`2A`…`10B`); `contact_name`, `phone` (11 digits) |
 | **BillType** | Catalog of charge heads (`gas`, `water`, `cleaner`, `common_electricity`, …) |
 | **FlatBillTypeSetting** | `flat_id` + `bill_type_id` + `enabled` |
 | **GasMeterReading** | Per flat/month: date, prev/curr m³, photo path, Gemini suggestion, confirmed value |
@@ -160,7 +172,7 @@ Current app has previous months’ meter readings and gas bills (`unity_rose_gar
 
 When the new app is feature-complete:
 
-1. Artisan import command maps flats by name (`1A`, …).  
+1. Artisan import command maps flats by name (`2A`, …).  
 2. Import readings → `GasMeterReading`.  
 3. Import bills/details → `MonthlyStatement` + gas `StatementLine`.  
 4. Import custom charges if any → other lines.  
@@ -196,7 +208,7 @@ Deliverables:
 
 1. **Migrations**
    - `buildings`
-   - `flats` (ensure `name`; seed 18 names — may alter existing `flats` or recreate carefully)
+   - `flats` (ensure `name`, `contact_name`, `phone` 11 digits; seed 18 flats `2A`…`10B` — may alter existing `flats` or recreate carefully)
    - `bill_types`
    - `flat_bill_type_settings`
    - `monthly_statements` (`flat_id`, `bill_month`, unique pair)
@@ -206,7 +218,7 @@ Deliverables:
 
 2. **Seeders**
    - Building: Unity Rose Garden + default m³→kg rate (e.g. 2.04)
-   - Flats: `1A`…`9B`
+   - Flats: `2A`…`10B` with placeholder `contact_name` + 11-digit `phone` (replace with real contacts later)
    - Bill types: gas, water, cleaner, common_electricity
    - FlatBillTypeSetting: all enabled for all flats
    - Roles: admin, secretary, treasurer
@@ -317,10 +329,11 @@ Helper (Phase A or B):
 - Exact UI chrome / design system (reuse current Bootstrap layout is fine for Phase A).  
 - Gemini model id (choose at Phase D).  
 - Whether offline/non-participating flats still appear on public home with ৳0 (recommended: **yes, show flat**).  
+- Whether public pages show contact name/phone (recommended Phase A: **admin-only**; public shows flat code only unless you decide otherwise).  
 - Cash-out categories list (define in Phase C).
 
 ---
 
 ## 12. One-line summary
 
-Rebuild around **per-flat monthly statements**, **per–bill-type participation**, **role-based admin**, and a **building cashbook**; ship Phase A foundation first; **import old gas history only after** the new app works.
+Rebuild around **per-flat monthly statements**, **per–bill-type participation**, **role-based admin**, and a **building cashbook**; flats are `2A`…`10B` with contact name + 11-digit phone; ship Phase A foundation first; **import old gas history only after** the new app works.
