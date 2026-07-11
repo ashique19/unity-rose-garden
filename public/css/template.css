@@ -99,7 +99,7 @@ Free for personal and commercial use
        (site-nav avoids Bootstrap's .nav flex styles)
     ══════════════════════════════════════════ */
     .site-nav {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1200;
       display: block;
       padding: 12px 0;
       background: rgba(232,244,242,0.96);
@@ -132,32 +132,94 @@ Free for personal and commercial use
     .nav-links {
       display: flex;
       flex: 1 1 auto;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       align-items: center;
       justify-content: flex-end;
-      gap: 4px 2px;
+      gap: 4px;
       min-width: 0;
       margin: 0;
       padding: 0;
       list-style: none;
     }
-    .nav-links li {
+    .nav-links > li {
       display: block;
       flex: 0 0 auto;
+      position: relative;
     }
-    .nav-links a {
-      display: inline-block;
-      font-size: 0.8125rem; font-weight: 500; color: var(--text-2);
+    .nav-links > li > a,
+    .nav-group-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-2);
       white-space: nowrap;
-      position: relative; padding: 6px 10px; border-radius: 100px;
+      padding: 8px 12px;
+      border-radius: 100px;
       background: transparent;
-      box-shadow: inset 0 0 0 0px var(--accent-border);
-      transition: color 0.4s var(--silk), background 0.4s var(--silk), box-shadow 0.4s var(--silk);
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      line-height: 1.2;
+      box-shadow: inset 0 0 0 0 var(--accent-border);
+      transition: color 0.3s var(--silk), background 0.3s var(--silk), box-shadow 0.3s var(--silk);
     }
-    .nav-links a:hover {
+    .nav-group-toggle::after {
+      content: '';
+      width: 0;
+      height: 0;
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-top: 5px solid currentColor;
+      opacity: 0.7;
+    }
+    .nav-links > li > a:hover,
+    .nav-group-toggle:hover,
+    .nav-group.open .nav-group-toggle {
       color: var(--accent);
       background: var(--accent-ghost);
       box-shadow: inset 0 0 0 1px var(--accent-border);
+    }
+    .nav-submenu {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      min-width: 200px;
+      margin: 0;
+      padding: 8px;
+      list-style: none;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: var(--shadow-md);
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-6px);
+      pointer-events: none;
+      transition: opacity 0.18s var(--silk), transform 0.18s var(--silk), visibility 0.18s;
+      z-index: 1100;
+    }
+    .nav-group.open .nav-submenu,
+    .nav-group:hover .nav-submenu,
+    .nav-group:focus-within .nav-submenu {
+      opacity: 1;
+      visibility: visible;
+      transform: none;
+      pointer-events: auto;
+    }
+    .nav-submenu a {
+      display: block;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-2);
+      white-space: nowrap;
+    }
+    .nav-submenu a:hover {
+      color: var(--accent);
+      background: var(--accent-ghost);
     }
     .nav-cta {
       display: flex;
@@ -173,6 +235,10 @@ Free for personal and commercial use
     .site-main {
       position: relative;
       z-index: 1;
+      padding-top: 72px;
+    }
+    .site-main > .features-section.pt-20 {
+      padding-top: 1.5rem !important;
     }
     .btn-ghost {
       font-size: 0.875rem; font-weight: 500; color: var(--text-2);
@@ -205,47 +271,138 @@ Free for personal and commercial use
     .nav-hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
     .nav-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
-    /* Mobile Menu */
-    .mobile-menu {
-      position: fixed; inset: 0; z-index: 999;
-      background: var(--bg);
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: flex-start;
-      gap: 0;
-      opacity: 0; pointer-events: none;
-      transition: opacity 0.4s var(--silk);
-      overflow-y: auto;
-      padding: 100px 32px 100px;
-      -webkit-overflow-scrolling: touch;
+    /* Mobile app-style drawer */
+    .mobile-drawer {
+      position: fixed;
+      inset: 0;
+      z-index: 1100;
+      pointer-events: none;
     }
-    .mobile-menu.open { opacity: 1; pointer-events: all; }
-    .mobile-menu a {
-      font-size: 1.1rem; font-weight: 600; letter-spacing: -0.01em;
-      color: var(--text-1); padding: 14px 0; width: 100%; text-align: center;
-      border-bottom: 1px solid var(--border);
-      opacity: 0; transform: translateY(16px);
-      transition: opacity 0.5s var(--silk), transform 0.5s var(--silk), color 0.3s;
+    .mobile-drawer.open {
+      pointer-events: auto;
     }
-    .mobile-menu a:first-child { border-top: 1px solid var(--border); }
-    .mobile-menu.open a { opacity: 1; transform: none; }
-    .mobile-menu a:hover { color: var(--accent); }
-    .mobile-menu a:nth-child(1) { transition-delay: 0.05s; }
-    .mobile-menu a:nth-child(2) { transition-delay: 0.10s; }
-    .mobile-menu a:nth-child(3) { transition-delay: 0.15s; }
-    .mobile-menu a:nth-child(4) { transition-delay: 0.20s; }
-    .mobile-menu a:nth-child(5) { transition-delay: 0.25s; }
-    .mobile-menu a:nth-child(6) { transition-delay: 0.30s; }
-    .mobile-menu .mobile-cta {
-      margin-top: 28px;
-      font-size: 0.9375rem; font-weight: 600;
-      background: var(--accent); color: #fff;
-      padding: 14px 40px; border-radius: 100px;
+    .mobile-drawer-backdrop {
+      position: absolute;
+      inset: 0;
       border: none;
-      opacity: 0; transform: translateY(16px);
-      transition: opacity 0.5s var(--silk) 0.35s, transform 0.5s var(--silk) 0.35s, background 0.3s;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+      background: rgba(13, 30, 28, 0.55);
+      opacity: 0;
+      transition: opacity 0.28s var(--silk);
+      -webkit-backdrop-filter: blur(2px);
+      backdrop-filter: blur(2px);
     }
-    .mobile-menu.open .mobile-cta { opacity: 1; transform: none; }
-    .mobile-menu .mobile-cta:hover { background: var(--accent-mid); }
+    .mobile-drawer.open .mobile-drawer-backdrop {
+      opacity: 1;
+    }
+    .mobile-drawer-panel {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: min(86vw, 360px);
+      display: flex;
+      flex-direction: column;
+      background: #f7fbfb;
+      box-shadow: -12px 0 40px rgba(13, 30, 28, 0.18);
+      transform: translateX(105%);
+      transition: transform 0.32s var(--silk);
+      will-change: transform;
+    }
+    .mobile-drawer.open .mobile-drawer-panel {
+      transform: translateX(0);
+    }
+    .mobile-drawer-scroll {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 76px 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .mobile-drawer-footer {
+      flex: 0 0 auto;
+      padding: 12px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+      background: #ffffff;
+      border-top: 1px solid var(--border);
+      box-shadow: 0 -8px 24px rgba(13, 30, 28, 0.06);
+    }
+    .mobile-menu-home {
+      display: block;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      font-size: 1.02rem;
+      font-weight: 700;
+      color: var(--text-1);
+      text-align: left;
+    }
+    .mobile-menu-home:hover,
+    .mobile-menu-home:active {
+      color: var(--accent);
+      border-color: var(--accent-border);
+      background: var(--accent-ghost);
+    }
+    .mobile-menu-section {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 10px 8px 8px;
+      box-shadow: var(--shadow-sm);
+    }
+    .mobile-menu-label {
+      margin: 2px 10px 8px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      text-align: left;
+    }
+    .mobile-menu-section a {
+      display: block;
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 0.98rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--text-1);
+      text-align: left;
+      transition: background 0.2s, color 0.2s;
+    }
+    .mobile-menu-section a + a {
+      margin-top: 2px;
+    }
+    .mobile-menu-section a:hover,
+    .mobile-menu-section a:active {
+      color: var(--accent);
+      background: var(--accent-ghost);
+    }
+    .mobile-drawer-footer .mobile-cta {
+      display: block;
+      width: 100%;
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 600;
+      background: var(--accent);
+      color: #fff;
+      padding: 14px 18px;
+      border-radius: 100px;
+      border: none;
+      text-align: center;
+      box-shadow: 0 8px 22px rgba(26, 122, 110, 0.28);
+    }
+    .mobile-drawer-footer .mobile-cta:hover,
+    .mobile-drawer-footer .mobile-cta:active {
+      background: var(--accent-mid);
+      color: #fff;
+    }
 
     /* ══════════════════════════════════════════
        2. HERO
@@ -1082,9 +1239,21 @@ Free for personal and commercial use
       .faq-inner { grid-template-columns: 1fr; }
       .faq-sidebar { position: static; }
     }
-    @media (max-width: 1100px) {
-      .nav-links, .nav-cta { display: none; }
-      .nav-hamburger { display: flex; }
+    @media (max-width: 900px) {
+      .nav-inner {
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .nav-links,
+      .nav-cta {
+        display: none !important;
+      }
+      .nav-hamburger {
+        display: flex;
+        margin-left: auto;
+        flex-shrink: 0;
+      }
+      .site-main { padding-top: 64px; }
     }
     @media (max-width: 768px) {
       .carousel-zoom { padding: 30px 0 0; }

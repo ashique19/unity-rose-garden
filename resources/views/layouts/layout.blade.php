@@ -34,31 +34,51 @@
 </head>
 <body>
 
-  <!-- ── MOBILE MENU ── -->
-  <div class="mobile-menu" id="mobileMenu" role="dialog" aria-modal="true" aria-label="Navigation">
-    <a href="{{ route('home') }}">Home</a>
-    @if(auth()->user())
-      @if(auth()->user()->hasAnyRole(['admin', 'treasurer']))
-        <a href="{{ route('admin.dashboard') }}">Accounts</a>
-        <a href="{{ route('admin.collections.index') }}">Collections</a>
-        <a href="{{ route('admin.ledger.index') }}">Ledger</a>
+  <!-- ── MOBILE DRAWER ── -->
+  <div class="mobile-drawer" id="mobileMenu" aria-hidden="true">
+    <button type="button" class="mobile-drawer-backdrop" id="mobileDrawerBackdrop" aria-label="Close menu"></button>
+    <aside class="mobile-drawer-panel" role="dialog" aria-modal="true" aria-label="Navigation">
+      <div class="mobile-drawer-scroll">
+        <a href="{{ route('home') }}" class="mobile-menu-home">Home</a>
+
+        @if(auth()->user())
+          @if(auth()->user()->hasAnyRole(['admin', 'treasurer']))
+            <div class="mobile-menu-section">
+              <div class="mobile-menu-label">Accounts</div>
+              <a href="{{ route('admin.dashboard') }}">Dashboard</a>
+              <a href="{{ route('admin.collections.index') }}">Collections</a>
+              <a href="{{ route('admin.ledger.index') }}">Ledger</a>
+            </div>
+          @endif
+          @if(auth()->user()->hasAnyRole(['admin', 'secretary']))
+            <div class="mobile-menu-section">
+              <div class="mobile-menu-label">Billing</div>
+              <a href="{{ route('admin.generate.index') }}">Generate month</a>
+              <a href="{{ route('admin.gas-readings.index') }}">Gas readings</a>
+              <a href="{{ route('admin.water.index') }}">Water</a>
+              <a href="{{ route('admin.other-charges.index') }}">Other charges</a>
+              <a href="{{ route('admin.flat-bill-type-settings.index') }}">Bill type settings</a>
+              <a href="{{ route('charge-templates.index') }}">Charge templates</a>
+            </div>
+          @endif
+          @if(auth()->user()->isAdmin())
+            <div class="mobile-menu-section">
+              <div class="mobile-menu-label">Admin</div>
+              <a href="{{ route('admin.flats.index') }}">Flats</a>
+              <a href="{{ route('admin.users.index') }}">Users</a>
+              <a href="{{ route('admin.audit.index') }}">Audit log</a>
+              <a href="{{ route('bill-history') }}">Legacy history</a>
+            </div>
+          @endif
+        @endif
+      </div>
+
+      @if(auth()->user())
+        <div class="mobile-drawer-footer">
+          <a href="{{ route('logout') }}" class="mobile-cta btn-primary">{{ auth()->user()->name }} · Logout</a>
+        </div>
       @endif
-      @if(auth()->user()->hasAnyRole(['admin', 'secretary']))
-        <a href="{{ route('admin.generate.index') }}">Generate month</a>
-        <a href="{{ route('admin.gas-readings.index') }}">Gas readings</a>
-        <a href="{{ route('admin.water.index') }}">Water</a>
-        <a href="{{ route('admin.other-charges.index') }}">Other charges</a>
-        <a href="{{ route('admin.flat-bill-type-settings.index') }}">Bill type settings</a>
-        <a href="{{ route('charge-templates.index') }}">Charge templates</a>
-      @endif
-      @if(auth()->user()->isAdmin())
-        <a href="{{ route('admin.flats.index') }}">Flats</a>
-        <a href="{{ route('admin.users.index') }}">Users</a>
-        <a href="{{ route('admin.audit.index') }}">Audit log</a>
-        <a href="{{ route('bill-history') }}">Legacy history</a>
-      @endif
-      <a href="{{ route('logout') }}" class="mobile-cta btn-primary">{{ auth()->user()->name }} | Logout</a>
-    @endif
+    </aside>
   </div>
 
   <!-- ── 1. NAV ── -->
@@ -68,22 +88,37 @@
       <ul class="nav-links" role="list">
         @if(auth()->user())
           @if(auth()->user()->hasAnyRole(['admin', 'treasurer']))
-            <li><a href="{{ route('admin.dashboard') }}">Accounts</a></li>
-            <li><a href="{{ route('admin.collections.index') }}">Collections</a></li>
-            <li><a href="{{ route('admin.ledger.index') }}">Ledger</a></li>
+            <li class="nav-group">
+              <button type="button" class="nav-group-toggle" aria-expanded="false" aria-haspopup="true">Accounts</button>
+              <ul class="nav-submenu" role="list">
+                <li><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
+                <li><a href="{{ route('admin.collections.index') }}">Collections</a></li>
+                <li><a href="{{ route('admin.ledger.index') }}">Ledger</a></li>
+              </ul>
+            </li>
           @endif
           @if(auth()->user()->hasAnyRole(['admin', 'secretary']))
-            <li><a href="{{ route('admin.generate.index') }}">Generate month</a></li>
-            <li><a href="{{ route('admin.gas-readings.index') }}">Gas readings</a></li>
-            <li><a href="{{ route('admin.water.index') }}">Water</a></li>
-            <li><a href="{{ route('admin.other-charges.index') }}">Other charges</a></li>
-            <li><a href="{{ route('admin.flat-bill-type-settings.index') }}">Bill type settings</a></li>
-            <li><a href="{{ route('charge-templates.index') }}">Charge templates</a></li>
+            <li class="nav-group">
+              <button type="button" class="nav-group-toggle" aria-expanded="false" aria-haspopup="true">Billing</button>
+              <ul class="nav-submenu" role="list">
+                <li><a href="{{ route('admin.generate.index') }}">Generate month</a></li>
+                <li><a href="{{ route('admin.gas-readings.index') }}">Gas readings</a></li>
+                <li><a href="{{ route('admin.water.index') }}">Water</a></li>
+                <li><a href="{{ route('admin.other-charges.index') }}">Other charges</a></li>
+                <li><a href="{{ route('admin.flat-bill-type-settings.index') }}">Bill type settings</a></li>
+                <li><a href="{{ route('charge-templates.index') }}">Charge templates</a></li>
+              </ul>
+            </li>
           @endif
           @if(auth()->user()->isAdmin())
-            <li><a href="{{ route('admin.flats.index') }}">Flats</a></li>
-            <li><a href="{{ route('admin.users.index') }}">Users</a></li>
-            <li><a href="{{ route('admin.audit.index') }}">Audit log</a></li>
+            <li class="nav-group">
+              <button type="button" class="nav-group-toggle" aria-expanded="false" aria-haspopup="true">Admin</button>
+              <ul class="nav-submenu" role="list">
+                <li><a href="{{ route('admin.flats.index') }}">Flats</a></li>
+                <li><a href="{{ route('admin.users.index') }}">Users</a></li>
+                <li><a href="{{ route('admin.audit.index') }}">Audit log</a></li>
+              </ul>
+            </li>
           @endif
         @endif
       </ul>
