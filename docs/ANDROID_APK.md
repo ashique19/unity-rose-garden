@@ -23,6 +23,12 @@ After `assembleDebug`, the APK is at:
 - `android/app/build/outputs/apk/debug/app-debug.apk`
 - Optionally copy to `dist/unity-rose-garden-debug.apk` (`dist/` is gitignored)
 
+## Startup crash without `google-services.json`
+
+`@capacitor/push-notifications` pulls in `firebase-messaging`, which registers `FirebaseInitProvider`. Without `android/app/google-services.json`, that provider can crash the app on open.
+
+This project disables the provider via `manifestPlaceholders.firebaseInitEnabled` in `android/app/build.gradle` (`false` when the JSON is missing, `true` when present). Push JS (`public/js/capacitor-push.js`) also delays registration and catches failures so missing Firebase never takes down the WebView.
+
 For a physical phone, serve Laravel on all interfaces:
 
 ```powershell

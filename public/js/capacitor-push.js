@@ -1,6 +1,9 @@
 /**
  * Registers FCM/device push tokens when running inside the Capacitor Android WebView.
  * Loaded from the Laravel layout; uses session cookies + CSRF meta tag.
+ *
+ * Safe without google-services.json: failures are logged and never thrown to the page.
+ * Registration is delayed until after the WebView finishes loading.
  */
 (function () {
   var Cap = window.Capacitor;
@@ -50,36 +53,51 @@
   async function initPush() {
     try {
       var perm = await PushNotifications.requestPermissions();
-      if (perm.receive !== 'granted') {
+      if (!perm || perm.receive !== 'granted') {
         console.info('[URG] Push permission not granted');
         return;
       }
 
-      await PushNotifications.register();
-
-      PushNotifications.addListener('registration', function (ev) {
-        registerToken(ev.value);
+      await PushNotifications.addListener('registration', function (ev) {
+        try {
+          registerToken(ev && ev.value);
+        } catch (err) {
+          console.warn('[URG] Token handler failed', err);
+        }
       });
 
-      PushNotifications.addListener('registrationError', function (err) {
+      await PushNotifications.addListener('registrationError', function (err) {
         console.warn('[URG] Push registration error', err);
       });
 
-      PushNotifications.addListener('pushNotificationReceived', function (notification) {
+      await PushNotifications.addListener('pushNotificationReceived', function (notification) {
         console.info('[URG] Push received', notification);
       });
 
-      PushNotifications.addListener('pushNotificationActionPerformed', function (notification) {
+      await PushNotifications.addListener('pushNotificationActionPerformed', function (notification) {
         console.info('[URG] Push action', notification);
       });
+
+      // register() calls FirebaseMessaging; rejects if Firebase is not configured.
+      await PushNotifications.register();
     } catch (e) {
-      console.warn('[URG] Push init failed', e);
+      console.warn('[URG] Push init failed (app continues without FCM)', e);
     }
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initPush);
-  } else {
-    initPush();
+  function schedulePushInit() {
+    // Wait until after first paint / Capacitor bridge settle so native startup is done.
+    var run = function () {
+      setTimeout(function () {
+        initPush();
+      }, 750);
+    };
+    if (document.readyState === 'complete') {
+      run();
+    } else {
+      window.addEventListener('load', run, { once: true });
+    }
   }
+
+  schedulePushInit();
 })();

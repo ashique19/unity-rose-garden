@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <application
         android:allowBackup="true"
@@ -34,6 +35,20 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!--
+          firebase-messaging merges FirebaseInitProvider into the app. Without
+          google-services.json that ContentProvider can crash the process at startup.
+          Gradle sets firebaseInitEnabled=true only when google-services.json is present.
+        -->
+        <provider
+            android:name="com.google.firebase.provider.FirebaseInitProvider"
+            android:authorities="${applicationId}.firebaseinitprovider"
+            android:exported="false"
+            android:enabled="${firebaseInitEnabled}"
+            android:initOrder="100"
+            android:directBootAware="true"
+            tools:replace="android:enabled" />
     </application>
 
     <!-- Permissions -->
