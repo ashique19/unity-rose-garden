@@ -59,13 +59,23 @@ return [
     | Application Timezone
     |--------------------------------------------------------------------------
     |
-    | Here you may specify the default timezone for your application, which
-    | will be used by the PHP date and date-time functions. The timezone
-    | is set to "UTC" by default as it is suitable for most use cases.
+    | All application dates (create, update, search, display, and log
+    | timestamps) use Bangladesh Standard Time (Asia/Dhaka, UTC+06:00).
     |
     */
 
-    'timezone' => 'Asia/Dhaka',
+    'timezone' => env('APP_TIMEZONE', 'Asia/Dhaka'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Schedule Timezone
+    |--------------------------------------------------------------------------
+    |
+    | Scheduled tasks (Artisan schedule) run in the same Dhaka timezone.
+    |
+    */
+
+    'schedule_timezone' => env('APP_TIMEZONE', 'Asia/Dhaka'),
 
     /*
     |--------------------------------------------------------------------------

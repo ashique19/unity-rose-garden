@@ -124,7 +124,7 @@ class LegacyProductionSeeder extends Seeder
         $this->seedLegacyMeterReadings($flatIdToName, $flatsByName);
 
         foreach ($bills as $billMonth => $bill) {
-            $monthLabel = date('M Y', strtotime($billMonth));
+            $monthLabel = \Carbon\Carbon::parse($billMonth)->timezone(config('app.timezone'))->format('M Y');
 
             foreach ($bill['details'] as $row) {
                 [$legacyFlatId, $prev, $curr, $usedM3, $usedKg, $paymentStatus] = $row;

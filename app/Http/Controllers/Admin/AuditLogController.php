@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -36,8 +37,21 @@ class AuditLogController extends Controller
                     }
                 });
             })
-            ->when($from, fn ($query) => $query->whereDate('created_at', '>=', $from))
-            ->when($to, fn ($query) => $query->whereDate('created_at', '<=', $to))
+            // Bound calendar days in Asia/Dhaka so log search matches local wall-clock dates.
+            ->when($from, function ($query) use ($from) {
+                $query->where(
+                    'created_at',
+                    '>=',
+                    Carbon::createFromFormat('Y-m-d', $from, config('app.timezone'))->startOfDay()
+                );
+            })
+            ->when($to, function ($query) use ($to) {
+                $query->where(
+                    'created_at',
+                    '<=',
+                    Carbon::createFromFormat('Y-m-d', $to, config('app.timezone'))->endOfDay()
+                );
+            })
             ->orderByDesc('id')
             ->paginate(40)
             ->withQueryString();

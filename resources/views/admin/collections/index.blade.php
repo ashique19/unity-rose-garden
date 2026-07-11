@@ -60,7 +60,7 @@
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Collected on</label>
-                    <input type="date" name="collected_on" class="form-control" value="{{ date('Y-m-d') }}" required>
+                    <input type="date" name="collected_on" class="form-control" value="{{ now()->toDateString() }}" required>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Note</label>

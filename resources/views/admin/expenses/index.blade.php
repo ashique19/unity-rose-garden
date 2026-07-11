@@ -83,7 +83,7 @@
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">Date</label>
-                    <input type="date" name="entry_date" class="form-control" value="{{ old('entry_date', date('Y-m-d')) }}" required>
+                    <input type="date" name="entry_date" class="form-control" value="{{ old('entry_date', now()->toDateString()) }}" required>
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">Payee</label>

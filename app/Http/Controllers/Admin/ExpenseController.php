@@ -237,7 +237,7 @@ class ExpenseController extends Controller
 
         if ($month = $request->query('month')) {
             if (preg_match('/^\d{4}-\d{2}$/', $month)) {
-                $start = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
+                $start = Carbon::createFromFormat('Y-m', $month, config('app.timezone'))->startOfMonth();
                 $from = $from ?: $start->toDateString();
                 $to = $to ?: $start->copy()->endOfMonth()->toDateString();
             }
