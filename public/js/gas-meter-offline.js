@@ -252,6 +252,144 @@
     }
   }
 
+  function flashRow(flatId, message, kind) {
+    const row = document.querySelector('[data-flat-row="' + flatId + '"]') ||
+      document.querySelector('input[form="gas-store-' + flatId + '"]')?.closest('tr');
+    if (!row) return;
+    let note = row.querySelector('[data-inline-flash]');
+    if (!note) {
+      note = document.createElement('div');
+      note.setAttribute('data-inline-flash', '1');
+      note.className = 'small mt-1';
+      const actions = row.querySelector('[data-actions-cell]') || row.lastElementChild;
+      actions?.appendChild(note);
+    }
+    note.className = 'small mt-1 ' + (kind === 'danger' ? 'text-danger' : 'text-success');
+    note.textContent = message;
+    if (kind !== 'danger') {
+      setTimeout(() => { note.textContent = ''; }, 2500);
+    }
+  }
+
+  function convertCreateRowToUpdate(form, reading) {
+    const flatId = String(reading.flat_id);
+    const row = document.querySelector('[data-flat-row="' + flatId + '"]') || form.closest('tr');
+    if (!row) return;
+
+    const oldFormId = form.id;
+    const newFormId = 'gas-update-' + reading.id;
+
+    form.id = newFormId;
+    form.classList.remove('gas-reading-store-form');
+    form.classList.add('gas-reading-update-form');
+    form.method = 'post';
+    form.action = reading.update_url;
+    form.removeAttribute('data-flat-id');
+    form.removeAttribute('data-flat-name');
+
+    // Remove create-only hiddens; keep CSRF.
+    form.querySelectorAll('input[name="flat_id"], input[name="bill_month"]').forEach((el) => el.remove());
+
+    let methodInput = form.querySelector('input[name="_method"]');
+    if (!methodInput) {
+      methodInput = document.createElement('input');
+      methodInput.type = 'hidden';
+      methodInput.name = '_method';
+      form.appendChild(methodInput);
+    }
+    methodInput.value = 'PUT';
+
+    row.querySelectorAll('[form="' + oldFormId + '"]').forEach((el) => {
+      el.setAttribute('form', newFormId);
+    });
+
+    const used = row.querySelector('[data-used-cell="' + flatId + '"]') || row.children[4];
+    if (used) {
+      used.classList.remove('text-muted');
+      used.removeAttribute('data-used-cell');
+      used.textContent = Number(reading.consumed_m3).toFixed(2);
+    }
+
+    const addBtn = row.querySelector('[data-add-btn="' + flatId + '"]');
+    if (addBtn) {
+      addBtn.removeAttribute('data-add-btn');
+      addBtn.classList.remove('btn-primary');
+      addBtn.classList.add('btn-outline-primary');
+      addBtn.textContent = 'Save';
+      addBtn.setAttribute('form', newFormId);
+      addBtn.type = 'submit';
+    }
+
+    const actions = row.querySelector('[data-actions-cell="' + flatId + '"]') || row.lastElementChild;
+    if (actions && !actions.querySelector('.gas-reading-delete-form')) {
+      const delForm = document.createElement('form');
+      delForm.method = 'post';
+      delForm.action = reading.destroy_url;
+      delForm.className = 'd-inline gas-reading-delete-form';
+      delForm.onsubmit = () => confirm('Delete reading for ' + (reading.flat_name || flatId) + '?');
+      delForm.innerHTML =
+        '<input type="hidden" name="_token" value="' + csrf() + '">' +
+        '<input type="hidden" name="_method" value="DELETE">' +
+        '<button class="btn btn-sm btn-outline-danger">Del</button>';
+      actions.appendChild(delForm);
+    }
+
+    row.setAttribute('data-row-mode', 'update');
+    row.setAttribute('data-reading-id', String(reading.id));
+  }
+
+  async function submitStoreForm(form) {
+    const flatId = form.getAttribute('data-flat-id');
+    const addBtn = document.querySelector('[data-add-btn="' + flatId + '"]');
+    if (addBtn) {
+      addBtn.disabled = true;
+      addBtn.textContent = 'Saving…';
+    }
+
+    const body = new FormData(form);
+    // Associated fields use form="" and are not in FormData(form) in all browsers for external inputs.
+    document.querySelectorAll('[form="' + form.id + '"]').forEach((el) => {
+      if (el.name && !el.disabled && el.type !== 'submit') {
+        body.set(el.name, el.value);
+      }
+    });
+
+    try {
+      const res = await fetch(form.action, {
+        method: 'POST',
+        headers: {
+          'X-CSRF-TOKEN': csrf(),
+          Accept: 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        body,
+        credentials: 'same-origin',
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = data.message ||
+          (data.errors ? Object.values(data.errors).flat().join(' ') : null) ||
+          'Could not save reading.';
+        flashRow(flatId, msg, 'danger');
+        if (addBtn) {
+          addBtn.disabled = false;
+          addBtn.textContent = 'Add';
+        }
+        return;
+      }
+
+      convertCreateRowToUpdate(form, data.reading);
+      flashRow(flatId, data.message || 'Saved.', 'success');
+    } catch (e) {
+      flashRow(flatId, e.message || 'Network error.', 'danger');
+      if (addBtn) {
+        addBtn.disabled = false;
+        addBtn.textContent = 'Add';
+      }
+    }
+  }
+
   function init() {
     const root = document.getElementById('gas-readings-offline');
     if (!root) return;
@@ -263,6 +401,13 @@
     let activeFlatId = null;
     let activeUploadUrl = null;
     let activeReadingDate = null;
+
+    document.querySelectorAll('.gas-reading-store-form').forEach((form) => {
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        submitStoreForm(form);
+      });
+    });
 
     document.querySelectorAll('[data-photo-btn]').forEach((btn) => {
       btn.addEventListener('click', () => {

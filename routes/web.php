@@ -5,10 +5,12 @@ use App\Http\Controllers\Admin\CollectionController;
 use App\Http\Controllers\Admin\CommonWaterController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\FlatBillTypeSettingController;
+use App\Http\Controllers\Admin\FlatController as AdminFlatController;
 use App\Http\Controllers\Admin\GasMeterReadingController;
 use App\Http\Controllers\Admin\LedgerController;
 use App\Http\Controllers\Admin\MonthGenerateController;
 use App\Http\Controllers\Admin\OtherChargeController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\BillGenerator;
 use App\Http\Controllers\ChargeTemplateController;
@@ -46,9 +48,6 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('generate-bill', [BillGenerator::class, 'index'])->name('generate-bill');
         Route::post('generate-bill', [BillGenerator::class, 'store'])->name('generate-bill.store');
-
-        Route::get('/admin/flats/{id}/edit', [FlatController::class, 'edit'])->name('flats.edit');
-        Route::put('/admin/flats/{id}', [FlatController::class, 'update'])->name('flats.update');
 
         Route::post('/bill-details/{id}/toggle-payment', [BillGenerator::class, 'togglePayment'])->name('bill-details.toggle-payment');
 
@@ -101,6 +100,14 @@ Route::middleware(['auth'])->group(function () {
     });
 
     Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(function () {
+        Route::get('flats', [AdminFlatController::class, 'index'])->name('flats.index');
+        Route::put('flats/{flat}', [AdminFlatController::class, 'update'])->name('flats.update');
+
+        Route::get('users', [AdminUserController::class, 'index'])->name('users.index');
+        Route::post('users', [AdminUserController::class, 'store'])->name('users.store');
+        Route::put('users/{user}', [AdminUserController::class, 'update'])->name('users.update');
+        Route::delete('users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
+
         Route::get('audit-log', [AuditLogController::class, 'index'])->name('audit.index');
     });
 });

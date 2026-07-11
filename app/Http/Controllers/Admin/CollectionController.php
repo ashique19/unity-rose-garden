@@ -108,6 +108,11 @@ class CollectionController extends Controller
             return Carbon::createFromFormat('Y-m', $month)->startOfMonth();
         }
 
+        $latest = MonthlyStatement::query()->max('bill_month');
+        if ($latest) {
+            return Carbon::parse($latest)->startOfMonth();
+        }
+
         return now()->startOfMonth();
     }
 }

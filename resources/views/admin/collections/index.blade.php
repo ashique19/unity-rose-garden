@@ -30,11 +30,11 @@
                 @csrf
                 <div class="col-md-4">
                     <label class="form-label">Statement (flat)</label>
-                    <select name="monthly_statement_id" class="form-select" required>
-                        <option value="">Select…</option>
+                    <select name="monthly_statement_id" class="form-select" required @disabled($statements->isEmpty())>
+                        <option value="">{{ $statements->isEmpty() ? 'No statements this month — generate first' : 'Select flat…' }}</option>
                         @foreach($statements as $statement)
                             <option value="{{ $statement->id }}">
-                                {{ $statement->flat?->name }}
+                                {{ $statement->flat?->name ?? 'Flat #'.$statement->flat_id }}
                                 — pending ৳{{ number_format((float) $statement->pendingAmount(), 2) }}
                             </option>
                         @endforeach

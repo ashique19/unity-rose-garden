@@ -134,8 +134,12 @@
                                 </td>
                             </tr>
                         @else
-                            <tr>
-                                <form method="post" action="{{ route('admin.gas-readings.store') }}" id="gas-store-{{ $flat->id }}">
+                            <tr data-flat-row="{{ $flat->id }}" data-row-mode="create">
+                                <form method="post" action="{{ route('admin.gas-readings.store') }}"
+                                      id="gas-store-{{ $flat->id }}"
+                                      class="gas-reading-store-form"
+                                      data-flat-id="{{ $flat->id }}"
+                                      data-flat-name="{{ $flat->name }}">
                                     @csrf
                                     <input type="hidden" name="flat_id" value="{{ $flat->id }}">
                                     <input type="hidden" name="bill_month" value="{{ $selectedMonth->format('Y-m') }}">
@@ -157,12 +161,12 @@
                                            data-current-input="{{ $flat->id }}"
                                            class="form-control form-control-sm" required>
                                 </td>
-                                <td class="text-muted">—</td>
+                                <td data-used-cell="{{ $flat->id }}" class="text-muted">—</td>
                                 <td>
                                     <div data-ocr-value="{{ $flat->id }}" class="small">—</div>
                                     <div data-photo-status="{{ $flat->id }}" class="small photo-status text-muted">No photo</div>
                                 </td>
-                                <td class="text-nowrap">
+                                <td class="text-nowrap" data-actions-cell="{{ $flat->id }}">
                                     <button type="button" class="btn btn-sm btn-outline-secondary"
                                             data-photo-btn="{{ $flat->id }}"
                                             data-upload-url="{{ route('admin.gas-readings.photo', $flat) }}"
@@ -172,7 +176,7 @@
                                             data-ocr-url="{{ route('admin.gas-readings.ocr', $flat) }}"
                                             data-has-photo="0"
                                             disabled>OCR</button>
-                                    <button form="gas-store-{{ $flat->id }}" class="btn btn-sm btn-primary">Add</button>
+                                    <button form="gas-store-{{ $flat->id }}" type="submit" class="btn btn-sm btn-primary" data-add-btn="{{ $flat->id }}">Add</button>
                                 </td>
                             </tr>
                         @endif

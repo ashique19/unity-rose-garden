@@ -150,4 +150,39 @@ class GeminiMeterAssistTest extends TestCase
         $this->assertEquals(50.00, (float) $reading->confirmed_m3);
         $this->assertEquals(51.25, (float) $reading->gemini_suggestion);
     }
+
+    #[Test]
+    public function store_via_json_returns_reading_without_redirect(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $user = User::query()->where('phone', '01785636359')->firstOrFail();
+        $flat = Flat::query()->where('name', '2A')->firstOrFail();
+
+        GasMeterReading::query()
+            ->where('flat_id', $flat->id)
+            ->whereDate('bill_month', '2026-07-01')
+            ->delete();
+
+        $this->actingAs($user)
+            ->postJson(route('admin.gas-readings.store'), [
+                'flat_id' => $flat->id,
+                'bill_month' => '2026-07',
+                'reading_date' => '2026-07-31',
+                'previous_m3' => 46.28,
+                'current_m3' => 50.00,
+            ])
+            ->assertOk()
+            ->assertJsonPath('ok', true)
+            ->assertJsonPath('reading.flat_id', $flat->id)
+            ->assertJsonPath('reading.current_m3', 50);
+
+        $this->assertTrue(
+            GasMeterReading::query()
+                ->where('flat_id', $flat->id)
+                ->whereDate('bill_month', '2026-07-01')
+                ->where('current_m3', 50)
+                ->exists()
+        );
+    }
 }

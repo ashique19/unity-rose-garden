@@ -52,6 +52,8 @@
         <a href="{{ route('charge-templates.index') }}">Charge templates</a>
       @endif
       @if(auth()->user()->isAdmin())
+        <a href="{{ route('admin.flats.index') }}">Flats</a>
+        <a href="{{ route('admin.users.index') }}">Users</a>
         <a href="{{ route('admin.audit.index') }}">Audit log</a>
         <a href="{{ route('bill-history') }}">Legacy history</a>
       @endif
@@ -79,6 +81,8 @@
             <li><a href="{{ route('charge-templates.index') }}">Charge templates</a></li>
           @endif
           @if(auth()->user()->isAdmin())
+            <li><a href="{{ route('admin.flats.index') }}">Flats</a></li>
+            <li><a href="{{ route('admin.users.index') }}">Users</a></li>
             <li><a href="{{ route('admin.audit.index') }}">Audit log</a></li>
           @endif
         @endif

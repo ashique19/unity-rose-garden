@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\MonthlyStatement;
+use App\Services\MonthGenerateReadiness;
 use App\Services\MonthStatementGenerator;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -12,7 +13,7 @@ use Illuminate\View\View;
 
 class MonthGenerateController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, MonthGenerateReadiness $readiness): View
     {
         $month = $this->resolveMonth($request->query('month'));
 
@@ -24,6 +25,7 @@ class MonthGenerateController extends Controller
             'selectedMonth' => $month,
             'existingCount' => $existingCount,
             'defaultPricePerKg' => 148,
+            'readiness' => $readiness->forMonth($month),
         ]);
     }
 

@@ -114,34 +114,35 @@ class MonthGenerateTest extends TestCase
     }
 
     #[Test]
-    public function admin_can_store_gas_reading(): void
+    public function generate_page_shows_readiness_for_complete_month(): void
     {
         $this->seed(DatabaseSeeder::class);
 
         $user = User::query()->where('phone', '01785636359')->firstOrFail();
-        $flat = Flat::query()->where('name', '2A')->firstOrFail();
-
-        GasMeterReading::query()
-            ->where('flat_id', $flat->id)
-            ->whereDate('bill_month', '2026-07-01')
-            ->delete();
 
         $this->actingAs($user)
-            ->post(route('admin.gas-readings.store'), [
-                'flat_id' => $flat->id,
-                'bill_month' => '2026-07',
-                'reading_date' => '2026-07-31',
-                'previous_m3' => 46.28,
-                'current_m3' => 50.00,
-            ])
-            ->assertRedirect();
+            ->get(route('admin.generate.index', ['month' => '2026-06']))
+            ->assertOk()
+            ->assertSee('Charge readiness')
+            ->assertSee('All required enabled charges are entered')
+            ->assertSee('15 / 15 flats')
+            ->assertSee('All gas-enabled flats have readings')
+            ->assertSee('building template');
+    }
 
-        $this->assertTrue(
-            GasMeterReading::query()
-                ->where('flat_id', $flat->id)
-                ->whereDate('bill_month', '2026-07-01')
-                ->where('current_m3', 50)
-                ->exists()
-        );
+    #[Test]
+    public function generate_page_lists_pending_gas_flats(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $user = User::query()->where('phone', '01785636359')->firstOrFail();
+
+        $this->actingAs($user)
+            ->get(route('admin.generate.index', ['month' => '2026-07']))
+            ->assertOk()
+            ->assertSee('required item(s) still pending')
+            ->assertSee('Pending:')
+            ->assertSee('2A')
+            ->assertDontSee('Pending: 3A', false);
     }
 }

@@ -188,4 +188,18 @@ class PhaseCAccountsTest extends TestCase
             ->assertOk()
             ->assertSee('Pending collections');
     }
+
+    #[Test]
+    public function collections_index_defaults_to_latest_statement_month_with_flats(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $user = User::query()->where('phone', '01785636359')->firstOrFail();
+
+        $this->actingAs($user)
+            ->get(route('admin.collections.index'))
+            ->assertOk()
+            ->assertSee('value="2026-06"', false)
+            ->assertSee('2A')
+            ->assertSee('10B');
+    }
 }

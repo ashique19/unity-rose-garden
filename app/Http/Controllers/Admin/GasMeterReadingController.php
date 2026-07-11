@@ -7,6 +7,7 @@ use App\Models\Flat;
 use App\Models\GasMeterReading;
 use App\Services\GeminiMeterReader;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -272,7 +273,7 @@ class GasMeterReadingController extends Controller
             ->with('gemini_photo_path', $path);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse|JsonResponse
     {
         $month = $this->resolveMonth($request->input('bill_month'));
 
@@ -295,10 +296,20 @@ class GasMeterReadingController extends Controller
         $flat = Flat::query()->findOrFail($data['flat_id']);
 
         if (! $flat->isBillTypeEnabled('gas')) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Gas is disabled for flat '.$flat->name.'.'], 422);
+            }
+
             return back()->withErrors(['flat_id' => 'Gas is disabled for flat '.$flat->name.'.'])->withInput();
         }
 
         if ((float) $data['current_m3'] < (float) $data['previous_m3']) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Current reading cannot be less than previous.', 'errors' => [
+                    'current_m3' => ['Current reading cannot be less than previous.'],
+                ]], 422);
+            }
+
             return back()->withErrors(['current_m3' => 'Current reading cannot be less than previous.'])->withInput();
         }
 
@@ -307,7 +318,7 @@ class GasMeterReadingController extends Controller
             $photoPath = $request->file('photo')->store('meter-readings/'.$flat->id, 'public');
         }
 
-        GasMeterReading::query()->create([
+        $reading = GasMeterReading::query()->create([
             'flat_id' => $flat->id,
             'bill_month' => $month->toDateString(),
             'reading_date' => $data['reading_date'],
@@ -322,6 +333,29 @@ class GasMeterReadingController extends Controller
             'bill_month' => $month->toDateString(),
             'current_m3' => $data['current_m3'],
         ]);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'message' => 'Gas reading saved for '.$flat->name.'.',
+                'reading' => [
+                    'id' => $reading->id,
+                    'flat_id' => $flat->id,
+                    'flat_name' => $flat->name,
+                    'bill_month' => $month->format('Y-m'),
+                    'reading_date' => $reading->reading_date?->format('Y-m-d'),
+                    'previous_m3' => (float) $reading->previous_m3,
+                    'current_m3' => (float) $reading->current_m3,
+                    'consumed_m3' => $reading->consumedM3(),
+                    'photo_path' => $reading->photo_path,
+                    'gemini_suggestion' => $reading->gemini_suggestion !== null
+                        ? (float) $reading->gemini_suggestion
+                        : null,
+                    'update_url' => route('admin.gas-readings.update', $reading),
+                    'destroy_url' => route('admin.gas-readings.destroy', $reading),
+                ],
+            ]);
+        }
 
         return redirect()
             ->route('admin.gas-readings.index', ['month' => $month->format('Y-m')])
