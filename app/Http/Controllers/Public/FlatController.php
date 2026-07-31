@@ -15,8 +15,6 @@ class FlatController extends Controller
 {
     public function show(Request $request, Flat $flat): View
     {
-        $selectedMonth = $this->resolveMonth($request->query('month'));
-
         $availableMonths = MonthlyStatement::query()
             ->where('flat_id', $flat->id)
             ->orderByDesc('bill_month')
@@ -25,8 +23,13 @@ class FlatController extends Controller
             ->unique()
             ->values();
 
-        if ($availableMonths->isNotEmpty() && ! $availableMonths->contains($selectedMonth->format('Y-m'))) {
-            // Keep requested month even if empty (shows empty state); default current is fine.
+        $monthQuery = $request->query('month');
+        if (is_string($monthQuery) && $monthQuery !== '') {
+            $selectedMonth = $this->resolveMonth($monthQuery);
+        } elseif ($availableMonths->isNotEmpty()) {
+            $selectedMonth = $this->resolveMonth($availableMonths->first());
+        } else {
+            $selectedMonth = $this->resolveMonth(null);
         }
 
         $statement = $flat->statementForMonth($selectedMonth->toDateString());
