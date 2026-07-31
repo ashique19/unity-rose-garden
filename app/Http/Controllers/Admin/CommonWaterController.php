@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\CommonMeterReading;
 use App\Models\Flat;
+use App\Support\BillMonth;
 use App\Support\WaterShareCalculator;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -125,14 +126,6 @@ class CommonWaterController extends Controller
 
     private function resolveMonth(?string $month): Carbon
     {
-        if ($month && preg_match('/^\d{4}-\d{2}$/', $month)) {
-            return Carbon::createFromFormat('Y-m', $month)->startOfMonth();
-        }
-
-        if ($month && preg_match('/^\d{4}-\d{2}-\d{2}$/', $month)) {
-            return Carbon::parse($month)->startOfMonth();
-        }
-
-        return now()->startOfMonth();
+        return BillMonth::parse($month);
     }
 }

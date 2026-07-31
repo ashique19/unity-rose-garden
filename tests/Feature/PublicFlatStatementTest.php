@@ -42,6 +42,27 @@ class PublicFlatStatementTest extends TestCase
     }
 
     #[Test]
+    public function june_statement_stays_june_when_today_is_day_31(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        \Carbon\Carbon::setTestNow(\Carbon\Carbon::create(2026, 7, 31, 18, 0, 0, 'Asia/Dhaka'));
+
+        $flat = Flat::query()->where('name', '2A')->firstOrFail();
+
+        $response = $this->get(route('public.flats.show', [
+            'flat' => $flat,
+            'month' => '2026-06',
+        ]));
+
+        $response->assertOk();
+        $response->assertSee('June 2026');
+        $response->assertDontSee('No statement');
+
+        \Carbon\Carbon::setTestNow();
+    }
+
+    #[Test]
     public function flat_month_view_shows_empty_state_when_missing(): void
     {
         $this->seed(DatabaseSeeder::class);

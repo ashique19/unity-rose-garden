@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Public;
 use App\Http\Controllers\Controller;
 use App\Models\Flat;
 use App\Models\MonthlyStatement;
+use App\Support\BillMonth;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -50,10 +51,6 @@ class StatementController extends Controller
 
     private function resolveMonth(?string $month): Carbon
     {
-        if ($month && preg_match('/^\d{4}-\d{2}$/', $month)) {
-            return Carbon::createFromFormat('Y-m', $month)->startOfMonth();
-        }
-
-        return now()->startOfMonth();
+        return BillMonth::parse($month);
     }
 }
