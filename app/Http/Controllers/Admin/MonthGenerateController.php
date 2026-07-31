@@ -9,6 +9,7 @@ use App\Services\FcmPushService;
 use App\Services\MonthGenerateReadiness;
 use App\Services\MonthStatementGenerator;
 use App\Support\Auditor;
+use App\Support\BillMonth;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -39,7 +40,7 @@ class MonthGenerateController extends Controller
             'price_per_kg' => ['required', 'numeric', 'min:0'],
         ]);
 
-        $month = Carbon::createFromFormat('Y-m', $data['month'])->startOfMonth();
+        $month = BillMonth::parse($data['month']);
         $stats = $generator->generate($month, (float) $data['price_per_kg']);
 
         Auditor::log('month.generate', null, [
@@ -73,10 +74,6 @@ class MonthGenerateController extends Controller
 
     private function resolveMonth(?string $month): Carbon
     {
-        if ($month && preg_match('/^\d{4}-\d{2}$/', $month)) {
-            return Carbon::createFromFormat('Y-m', $month)->startOfMonth();
-        }
-
-        return now()->startOfMonth();
+        return BillMonth::parse($month);
     }
 }

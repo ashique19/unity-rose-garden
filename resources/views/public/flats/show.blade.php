@@ -19,7 +19,7 @@
                     @endphp
                     @foreach($options as $option)
                         <option value="{{ $option }}" @selected($option === $currentKey)>
-                            {{ \Carbon\Carbon::createFromFormat('Y-m', $option)->format('F Y') }}
+                            {{ \App\Support\BillMonth::label($option) }}
                         </option>
                     @endforeach
                 </select>

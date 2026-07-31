@@ -8,6 +8,7 @@ use App\Models\Building;
 use App\Models\Collection;
 use App\Models\Flat;
 use App\Models\MonthlyStatement;
+use App\Support\BillMonth;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -119,14 +120,14 @@ class CollectionController extends Controller
     private function resolveMonth(?string $month): Carbon
     {
         if ($month && preg_match('/^\d{4}-\d{2}$/', $month)) {
-            return Carbon::createFromFormat('Y-m', $month)->startOfMonth();
+            return BillMonth::parse($month);
         }
 
         $latest = MonthlyStatement::query()->max('bill_month');
         if ($latest) {
-            return Carbon::parse($latest)->startOfMonth();
+            return BillMonth::parse(Carbon::parse($latest)->toDateString());
         }
 
-        return now()->startOfMonth();
+        return BillMonth::parse(null);
     }
 }

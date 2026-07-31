@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Flat;
 use App\Models\GasMeterReading;
 use App\Services\GeminiMeterReader;
+use App\Support\BillMonth;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -456,14 +457,6 @@ class GasMeterReadingController extends Controller
 
     private function resolveMonth(?string $month): Carbon
     {
-        if ($month && preg_match('/^\d{4}-\d{2}$/', $month)) {
-            return Carbon::createFromFormat('Y-m', $month)->startOfMonth();
-        }
-
-        if ($month && preg_match('/^\d{4}-\d{2}-\d{2}$/', $month)) {
-            return Carbon::parse($month)->startOfMonth();
-        }
-
-        return now()->startOfMonth();
+        return BillMonth::parse($month);
     }
 }
