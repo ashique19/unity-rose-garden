@@ -8,6 +8,7 @@ use App\Models\Building;
 use App\Models\Expense;
 use App\Models\ExpenseHead;
 use App\Support\Auditor;
+use App\Support\BillMonth;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -237,7 +238,7 @@ class ExpenseController extends Controller
 
         if ($month = $request->query('month')) {
             if (preg_match('/^\d{4}-\d{2}$/', $month)) {
-                $start = Carbon::createFromFormat('Y-m', $month, config('app.timezone'))->startOfMonth();
+                $start = BillMonth::parse($month);
                 $from = $from ?: $start->toDateString();
                 $to = $to ?: $start->copy()->endOfMonth()->toDateString();
             }
