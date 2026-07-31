@@ -68,118 +68,103 @@
                             $hasPhoto = filled($reading?->photo_path);
                             $readingDateDefault = $reading?->reading_date?->format('Y-m-d')
                                 ?? $selectedMonth->copy()->endOfMonth()->format('Y-m-d');
+                            $formId = $reading ? 'gas-update-'.$reading->id : 'gas-store-'.$flat->id;
                         @endphp
-                        @if($reading)
-                            <tr>
-                                <form method="post" action="{{ route('admin.gas-readings.update', $reading) }}" id="gas-update-{{ $reading->id }}">
-                                    @csrf
-                                    @method('PUT')
-                                </form>
-                                <td class="fw-semibold">
-                                    {{ $flat->name }}
-                                    @if($hasPhoto)
-                                        <div class="mt-1">
-                                            <img data-photo-thumb="{{ $flat->id }}"
-                                                 src="{{ asset('storage/'.$reading->photo_path) }}"
-                                                 alt="" class="rounded border" style="max-height: 40px;">
-                                        </div>
+                        <tr data-flat-row="{{ $flat->id }}"
+                            data-flat-name="{{ $flat->name }}"
+                            data-row-mode="{{ $reading ? 'update' : 'create' }}"
+                            @if($reading) data-reading-id="{{ $reading->id }}" @endif>
+                            <td class="fw-semibold">
+                                {{ $flat->name }}
+                                @if($hasPhoto)
+                                    <div class="mt-1">
+                                        <img data-photo-thumb="{{ $flat->id }}"
+                                             src="{{ asset('storage/'.$reading->photo_path) }}"
+                                             alt="" class="rounded border" style="max-height: 40px;">
+                                    </div>
+                                @else
+                                    <img data-photo-thumb="{{ $flat->id }}" alt="" class="rounded border d-none" style="max-height: 40px;">
+                                @endif
+                            </td>
+                            <td>
+                                <input form="{{ $formId }}" type="date" name="reading_date" class="form-control form-control-sm"
+                                       value="{{ $readingDateDefault }}" required>
+                            </td>
+                            <td>
+                                <input form="{{ $formId }}" type="number" step="0.01" min="0" name="previous_m3" class="form-control form-control-sm"
+                                       value="{{ $reading ? $reading->previous_m3 : $row['suggested_previous_m3'] }}" required>
+                            </td>
+                            <td>
+                                <input form="{{ $formId }}" type="number" step="0.01" min="0" name="current_m3"
+                                       data-current-input="{{ $flat->id }}"
+                                       class="form-control form-control-sm"
+                                       value="{{ $reading?->current_m3 }}" required>
+                            </td>
+                            <td @if(! $reading) data-used-cell="{{ $flat->id }}" class="text-muted" @endif>
+                                {{ $reading ? number_format($reading->consumedM3(), 2) : '—' }}
+                            </td>
+                            <td>
+                                <div data-ocr-value="{{ $flat->id }}" class="small">
+                                    @if($reading?->gemini_suggestion !== null)
+                                        {{ number_format((float) $reading->gemini_suggestion, 2) }}
                                     @else
-                                        <img data-photo-thumb="{{ $flat->id }}" alt="" class="rounded border d-none" style="max-height: 40px;">
+                                        —
                                     @endif
-                                </td>
-                                <td>
-                                    <input form="gas-update-{{ $reading->id }}" type="date" name="reading_date" class="form-control form-control-sm"
-                                           value="{{ $readingDateDefault }}" required>
-                                </td>
-                                <td>
-                                    <input form="gas-update-{{ $reading->id }}" type="number" step="0.01" min="0" name="previous_m3" class="form-control form-control-sm"
-                                           value="{{ $reading->previous_m3 }}" required>
-                                </td>
-                                <td>
-                                    <input form="gas-update-{{ $reading->id }}" type="number" step="0.01" min="0" name="current_m3"
-                                           data-current-input="{{ $flat->id }}"
-                                           class="form-control form-control-sm"
-                                           value="{{ $reading->current_m3 }}" required>
-                                </td>
-                                <td>{{ number_format($reading->consumedM3(), 2) }}</td>
-                                <td>
-                                    <div data-ocr-value="{{ $flat->id }}" class="small">
-                                        @if($reading->gemini_suggestion !== null)
-                                            {{ number_format((float) $reading->gemini_suggestion, 2) }}
-                                        @else
-                                            —
-                                        @endif
-                                    </div>
-                                    <div data-photo-status="{{ $flat->id }}" class="small photo-status text-muted">
-                                        {{ $hasPhoto ? 'Photo on server' : 'No photo' }}
-                                    </div>
-                                </td>
-                                <td class="text-nowrap">
-                                    <button type="button" class="btn btn-sm btn-outline-secondary"
-                                            data-photo-btn="{{ $flat->id }}"
-                                            data-upload-url="{{ route('admin.gas-readings.photo', $flat) }}"
-                                            data-reading-date="{{ $readingDateDefault }}">Photo</button>
-                                    <button type="button" class="btn btn-sm btn-outline-info"
-                                            data-ocr-btn="{{ $flat->id }}"
-                                            data-ocr-url="{{ route('admin.gas-readings.ocr', $flat) }}"
-                                            data-has-photo="{{ $hasPhoto ? '1' : '0' }}"
-                                            {{ $hasPhoto && $geminiReady ? '' : 'disabled' }}>OCR</button>
-                                    <button form="gas-update-{{ $reading->id }}" class="btn btn-sm btn-outline-primary">Save</button>
-                                    <form method="post" action="{{ route('admin.gas-readings.destroy', $reading) }}" class="d-inline"
+                                </div>
+                                <div data-photo-status="{{ $flat->id }}" class="small photo-status text-muted">
+                                    {{ $hasPhoto ? 'Photo on server' : 'No photo' }}
+                                </div>
+                            </td>
+                            <td class="text-nowrap" data-actions-cell="{{ $flat->id }}">
+                                @if($reading)
+                                    <form method="post"
+                                          action="{{ route('admin.gas-readings.update', $reading) }}"
+                                          id="{{ $formId }}"
+                                          class="d-none gas-reading-save-form"
+                                          data-save-mode="update"
+                                          data-flat-id="{{ $flat->id }}">
+                                        @csrf
+                                        @method('PUT')
+                                    </form>
+                                @else
+                                    <form method="post"
+                                          action="{{ route('admin.gas-readings.store') }}"
+                                          id="{{ $formId }}"
+                                          class="d-none gas-reading-save-form"
+                                          data-save-mode="create"
+                                          data-flat-id="{{ $flat->id }}"
+                                          data-flat-name="{{ $flat->name }}">
+                                        @csrf
+                                        <input type="hidden" name="flat_id" value="{{ $flat->id }}">
+                                        <input type="hidden" name="bill_month" value="{{ $selectedMonth->format('Y-m') }}">
+                                    </form>
+                                @endif
+
+                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                        data-photo-btn="{{ $flat->id }}"
+                                        data-upload-url="{{ route('admin.gas-readings.photo', $flat) }}"
+                                        data-reading-date="{{ $readingDateDefault }}">Photo</button>
+                                <button type="button" class="btn btn-sm btn-outline-info"
+                                        data-ocr-btn="{{ $flat->id }}"
+                                        data-ocr-url="{{ route('admin.gas-readings.ocr', $flat) }}"
+                                        data-has-photo="{{ $hasPhoto ? '1' : '0' }}"
+                                        {{ ($hasPhoto && $geminiReady) ? '' : 'disabled' }}>OCR</button>
+                                <button type="submit"
+                                        form="{{ $formId }}"
+                                        class="btn btn-sm {{ $reading ? 'btn-outline-primary' : 'btn-primary' }}"
+                                        data-save-btn="{{ $flat->id }}">
+                                    {{ $reading ? 'Save' : 'Add' }}
+                                </button>
+                                @if($reading)
+                                    <form method="post" action="{{ route('admin.gas-readings.destroy', $reading) }}" class="d-inline gas-reading-delete-form"
                                           onsubmit="return confirm('Delete reading for {{ $flat->name }}?')">
                                         @csrf
                                         @method('DELETE')
-                                        <button class="btn btn-sm btn-outline-danger">Del</button>
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Del</button>
                                     </form>
-                                </td>
-                            </tr>
-                        @else
-                            <tr data-flat-row="{{ $flat->id }}" data-row-mode="create">
-                                <form method="post" action="{{ route('admin.gas-readings.store') }}"
-                                      id="gas-store-{{ $flat->id }}"
-                                      class="gas-reading-store-form"
-                                      data-flat-id="{{ $flat->id }}"
-                                      data-flat-name="{{ $flat->name }}">
-                                    @csrf
-                                    <input type="hidden" name="flat_id" value="{{ $flat->id }}">
-                                    <input type="hidden" name="bill_month" value="{{ $selectedMonth->format('Y-m') }}">
-                                </form>
-                                <td class="fw-semibold">
-                                    {{ $flat->name }}
-                                    <img data-photo-thumb="{{ $flat->id }}" alt="" class="rounded border d-none mt-1" style="max-height: 40px;">
-                                </td>
-                                <td>
-                                    <input form="gas-store-{{ $flat->id }}" type="date" name="reading_date" class="form-control form-control-sm"
-                                           value="{{ $readingDateDefault }}" required>
-                                </td>
-                                <td>
-                                    <input form="gas-store-{{ $flat->id }}" type="number" step="0.01" min="0" name="previous_m3" class="form-control form-control-sm"
-                                           value="{{ $row['suggested_previous_m3'] }}" required>
-                                </td>
-                                <td>
-                                    <input form="gas-store-{{ $flat->id }}" type="number" step="0.01" min="0" name="current_m3"
-                                           data-current-input="{{ $flat->id }}"
-                                           class="form-control form-control-sm" required>
-                                </td>
-                                <td data-used-cell="{{ $flat->id }}" class="text-muted">—</td>
-                                <td>
-                                    <div data-ocr-value="{{ $flat->id }}" class="small">—</div>
-                                    <div data-photo-status="{{ $flat->id }}" class="small photo-status text-muted">No photo</div>
-                                </td>
-                                <td class="text-nowrap" data-actions-cell="{{ $flat->id }}">
-                                    <button type="button" class="btn btn-sm btn-outline-secondary"
-                                            data-photo-btn="{{ $flat->id }}"
-                                            data-upload-url="{{ route('admin.gas-readings.photo', $flat) }}"
-                                            data-reading-date="{{ $readingDateDefault }}">Photo</button>
-                                    <button type="button" class="btn btn-sm btn-outline-info"
-                                            data-ocr-btn="{{ $flat->id }}"
-                                            data-ocr-url="{{ route('admin.gas-readings.ocr', $flat) }}"
-                                            data-has-photo="0"
-                                            disabled>OCR</button>
-                                    <button form="gas-store-{{ $flat->id }}" type="submit" class="btn btn-sm btn-primary" data-add-btn="{{ $flat->id }}">Add</button>
-                                </td>
-                            </tr>
-                        @endif
+                                @endif
+                            </td>
+                        </tr>
                     @endforeach
                 </tbody>
             </table>

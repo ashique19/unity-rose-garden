@@ -253,8 +253,7 @@
   }
 
   function flashRow(flatId, message, kind) {
-    const row = document.querySelector('[data-flat-row="' + flatId + '"]') ||
-      document.querySelector('input[form="gas-store-' + flatId + '"]')?.closest('tr');
+    const row = document.querySelector('[data-flat-row="' + flatId + '"]');
     if (!row) return;
     let note = row.querySelector('[data-inline-flash]');
     if (!note) {
@@ -271,23 +270,42 @@
     }
   }
 
+  /**
+   * Snapshot fields for one form only. Values are copied immediately so a
+   * concurrent save on another row cannot change what this request sends.
+   */
+  function collectSavePayload(form) {
+    const body = new FormData();
+    const formId = form.id;
+
+    form.querySelectorAll('input, select, textarea').forEach((el) => {
+      if (!el.name || el.disabled) return;
+      if (el.type === 'file') return;
+      body.set(el.name, el.value);
+    });
+
+    document.querySelectorAll('[form="' + CSS.escape(formId) + '"]').forEach((el) => {
+      if (!el.name || el.disabled) return;
+      if (el.tagName === 'BUTTON' || el.type === 'submit' || el.type === 'button') return;
+      body.set(el.name, el.value);
+    });
+
+    return body;
+  }
+
   function convertCreateRowToUpdate(form, reading) {
     const flatId = String(reading.flat_id);
-    const row = document.querySelector('[data-flat-row="' + flatId + '"]') || form.closest('tr');
-    if (!row) return;
+    const row = document.querySelector('[data-flat-row="' + flatId + '"]');
+    if (!row || !form) return;
 
     const oldFormId = form.id;
     const newFormId = 'gas-update-' + reading.id;
 
     form.id = newFormId;
-    form.classList.remove('gas-reading-store-form');
-    form.classList.add('gas-reading-update-form');
-    form.method = 'post';
+    form.setAttribute('data-save-mode', 'update');
     form.action = reading.update_url;
-    form.removeAttribute('data-flat-id');
     form.removeAttribute('data-flat-name');
 
-    // Remove create-only hiddens; keep CSRF.
     form.querySelectorAll('input[name="flat_id"], input[name="bill_month"]').forEach((el) => el.remove());
 
     let methodInput = form.querySelector('input[name="_method"]');
@@ -310,14 +328,13 @@
       used.textContent = Number(reading.consumed_m3).toFixed(2);
     }
 
-    const addBtn = row.querySelector('[data-add-btn="' + flatId + '"]');
-    if (addBtn) {
-      addBtn.removeAttribute('data-add-btn');
-      addBtn.classList.remove('btn-primary');
-      addBtn.classList.add('btn-outline-primary');
-      addBtn.textContent = 'Save';
-      addBtn.setAttribute('form', newFormId);
-      addBtn.type = 'submit';
+    const saveBtn = row.querySelector('[data-save-btn="' + flatId + '"]');
+    if (saveBtn) {
+      saveBtn.classList.remove('btn-primary');
+      saveBtn.classList.add('btn-outline-primary');
+      saveBtn.textContent = 'Save';
+      saveBtn.setAttribute('form', newFormId);
+      saveBtn.disabled = false;
     }
 
     const actions = row.querySelector('[data-actions-cell="' + flatId + '"]') || row.lastElementChild;
@@ -330,7 +347,7 @@
       delForm.innerHTML =
         '<input type="hidden" name="_token" value="' + csrf() + '">' +
         '<input type="hidden" name="_method" value="DELETE">' +
-        '<button class="btn btn-sm btn-outline-danger">Del</button>';
+        '<button type="submit" class="btn btn-sm btn-outline-danger">Del</button>';
       actions.appendChild(delForm);
     }
 
@@ -338,24 +355,49 @@
     row.setAttribute('data-reading-id', String(reading.id));
   }
 
-  async function submitStoreForm(form) {
-    const flatId = form.getAttribute('data-flat-id');
-    const addBtn = document.querySelector('[data-add-btn="' + flatId + '"]');
-    if (addBtn) {
-      addBtn.disabled = true;
-      addBtn.textContent = 'Saving…';
+  function applyUpdateRow(form, reading) {
+    const flatId = String(reading.flat_id);
+    const row = document.querySelector('[data-flat-row="' + flatId + '"]');
+    if (!row) return;
+
+    const used = row.children[4];
+    if (used) {
+      used.classList.remove('text-muted');
+      used.textContent = Number(reading.consumed_m3).toFixed(2);
     }
 
-    const body = new FormData(form);
-    // Associated fields use form="" and are not in FormData(form) in all browsers for external inputs.
-    document.querySelectorAll('[form="' + form.id + '"]').forEach((el) => {
-      if (el.name && !el.disabled && el.type !== 'submit') {
-        body.set(el.name, el.value);
-      }
-    });
+    const saveBtn = row.querySelector('[data-save-btn="' + flatId + '"]');
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save';
+    }
+  }
+
+  const inflightSaves = new Set();
+
+  async function submitSaveForm(form) {
+    const flatId = form.getAttribute('data-flat-id');
+    const mode = form.getAttribute('data-save-mode') || 'create';
+    const saveKey = form.id || ('flat-' + flatId);
+
+    if (inflightSaves.has(saveKey)) {
+      return;
+    }
+    inflightSaves.add(saveKey);
+
+    const saveBtn = flatId ? document.querySelector('[data-save-btn="' + flatId + '"]') : null;
+    const previousLabel = saveBtn?.textContent || (mode === 'update' ? 'Save' : 'Add');
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving…';
+    }
+
+    // Snapshot now — before any other row's UI updates can run.
+    const body = collectSavePayload(form);
+    const action = form.action;
 
     try {
-      const res = await fetch(form.action, {
+      const res = await fetch(action, {
         method: 'POST',
         headers: {
           'X-CSRF-TOKEN': csrf(),
@@ -372,21 +414,31 @@
           (data.errors ? Object.values(data.errors).flat().join(' ') : null) ||
           'Could not save reading.';
         flashRow(flatId, msg, 'danger');
-        if (addBtn) {
-          addBtn.disabled = false;
-          addBtn.textContent = 'Add';
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = previousLabel;
         }
         return;
       }
 
-      convertCreateRowToUpdate(form, data.reading);
+      if (mode === 'create' && data.reading) {
+        convertCreateRowToUpdate(form, data.reading);
+      } else if (data.reading) {
+        applyUpdateRow(form, data.reading);
+      } else if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = previousLabel;
+      }
+
       flashRow(flatId, data.message || 'Saved.', 'success');
     } catch (e) {
       flashRow(flatId, e.message || 'Network error.', 'danger');
-      if (addBtn) {
-        addBtn.disabled = false;
-        addBtn.textContent = 'Add';
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = previousLabel;
       }
+    } finally {
+      inflightSaves.delete(saveKey);
     }
   }
 
@@ -402,11 +454,14 @@
     let activeUploadUrl = null;
     let activeReadingDate = null;
 
-    document.querySelectorAll('.gas-reading-store-form').forEach((form) => {
-      form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        submitStoreForm(form);
-      });
+    // Event delegation: one listener covers create + update, including rows
+    // converted from Add → Save after a successful create.
+    root.addEventListener('submit', (e) => {
+      const form = e.target;
+      if (!(form instanceof HTMLFormElement)) return;
+      if (!form.classList.contains('gas-reading-save-form')) return;
+      e.preventDefault();
+      submitSaveForm(form);
     });
 
     document.querySelectorAll('[data-photo-btn]').forEach((btn) => {

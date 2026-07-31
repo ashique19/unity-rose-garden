@@ -23,7 +23,7 @@ class BillGenerator extends Controller
             'price_per_kg' => 'required|numeric|min:0',   
         ]);
 
-        $m3ToKgMultiplier = env('M3_TO_KG_CONVERSION_RATE', 2.04);
+        $m3ToKgMultiplier = env('M3_TO_KG_CONVERSION_RATE', 2.08);
 
         try {
             $billingMonth  = \Carbon\Carbon::parse($request->input('month'))->startOfMonth();
@@ -148,7 +148,7 @@ class BillGenerator extends Controller
             $volumeM3 = $currentSum - $prevSum;
 
             // Convert the volume figure to mass (kg) by dividing by 2.04
-            $massKg = $volumeM3 * env('M3_TO_KG_CONVERSION_RATE', 2.04);
+            $massKg = $volumeM3 * env('M3_TO_KG_CONVERSION_RATE', 2.08);
 
             // Format the string label to display in the dropdown option
             $dropdownOptions[] = [

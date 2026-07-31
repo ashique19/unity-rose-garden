@@ -185,4 +185,47 @@ class GeminiMeterAssistTest extends TestCase
                 ->exists()
         );
     }
+
+    #[Test]
+    public function update_via_json_saves_only_that_reading(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $user = User::query()->where('phone', '01785636359')->firstOrFail();
+        $flatA = Flat::query()->where('name', '2A')->firstOrFail();
+        $flatB = Flat::query()->where('name', '2B')->firstOrFail();
+
+        $readingA = GasMeterReading::query()->updateOrCreate(
+            ['flat_id' => $flatA->id, 'bill_month' => '2026-07-01'],
+            [
+                'reading_date' => '2026-07-31',
+                'previous_m3' => 10,
+                'current_m3' => 11,
+                'confirmed_m3' => 11,
+            ]
+        );
+        $readingB = GasMeterReading::query()->updateOrCreate(
+            ['flat_id' => $flatB->id, 'bill_month' => '2026-07-01'],
+            [
+                'reading_date' => '2026-07-31',
+                'previous_m3' => 20,
+                'current_m3' => 21,
+                'confirmed_m3' => 21,
+            ]
+        );
+
+        $this->actingAs($user)
+            ->putJson(route('admin.gas-readings.update', $readingA), [
+                'reading_date' => '2026-07-31',
+                'previous_m3' => 10,
+                'current_m3' => 15.5,
+            ])
+            ->assertOk()
+            ->assertJsonPath('ok', true)
+            ->assertJsonPath('reading.id', $readingA->id)
+            ->assertJsonPath('reading.current_m3', 15.5);
+
+        $this->assertEquals(15.5, (float) $readingA->fresh()->current_m3);
+        $this->assertEquals(21.0, (float) $readingB->fresh()->current_m3);
+    }
 }

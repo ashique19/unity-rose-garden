@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\BillType;
-use App\Models\Building;
 use App\Models\ChargeTemplate;
 use App\Models\CommonMeterReading;
 use App\Models\CustomCharge;
@@ -30,8 +29,7 @@ class MonthStatementGenerator
         $monthKey = $billMonth->toDateString();
         $monthLabel = $billMonth->format('M Y');
 
-        $building = Building::query()->first();
-        $m3ToKg = (float) ($building?->m3_to_kg_rate ?? 2.08);
+        $m3ToKg = (float) env('M3_TO_KG_CONVERSION_RATE', 2.08);
 
         $gasType = BillType::query()->where('key', 'gas')->first();
         $waterType = BillType::query()->where('key', 'water')->first();

@@ -362,7 +362,7 @@ class GasMeterReadingController extends Controller
             ->with('success', 'Gas reading confirmed and saved for '.$flat->name.'.');
     }
 
-    public function update(Request $request, GasMeterReading $gasMeterReading): RedirectResponse
+    public function update(Request $request, GasMeterReading $gasMeterReading): RedirectResponse|JsonResponse
     {
         $data = $request->validate([
             'reading_date' => ['required', 'date'],
@@ -374,10 +374,20 @@ class GasMeterReadingController extends Controller
         ]);
 
         if (! $gasMeterReading->flat->isBillTypeEnabled('gas')) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Gas is disabled for this flat.'], 422);
+            }
+
             return back()->withErrors(['flat_id' => 'Gas is disabled for this flat.']);
         }
 
         if ((float) $data['current_m3'] < (float) $data['previous_m3']) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Current reading cannot be less than previous.', 'errors' => [
+                    'current_m3' => ['Current reading cannot be less than previous.'],
+                ]], 422);
+            }
+
             return back()->withErrors(['current_m3' => 'Current reading cannot be less than previous.'])->withInput();
         }
 
@@ -400,9 +410,35 @@ class GasMeterReadingController extends Controller
             'gemini_suggestion' => $data['gemini_suggestion'] ?? $gasMeterReading->gemini_suggestion,
         ]);
 
+        $gasMeterReading->refresh();
+        $flat = $gasMeterReading->flat;
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'message' => 'Gas reading confirmed and saved for '.$flat->name.'.',
+                'reading' => [
+                    'id' => $gasMeterReading->id,
+                    'flat_id' => $flat->id,
+                    'flat_name' => $flat->name,
+                    'bill_month' => $gasMeterReading->bill_month->format('Y-m'),
+                    'reading_date' => $gasMeterReading->reading_date?->format('Y-m-d'),
+                    'previous_m3' => (float) $gasMeterReading->previous_m3,
+                    'current_m3' => (float) $gasMeterReading->current_m3,
+                    'consumed_m3' => $gasMeterReading->consumedM3(),
+                    'photo_path' => $gasMeterReading->photo_path,
+                    'gemini_suggestion' => $gasMeterReading->gemini_suggestion !== null
+                        ? (float) $gasMeterReading->gemini_suggestion
+                        : null,
+                    'update_url' => route('admin.gas-readings.update', $gasMeterReading),
+                    'destroy_url' => route('admin.gas-readings.destroy', $gasMeterReading),
+                ],
+            ]);
+        }
+
         return redirect()
             ->route('admin.gas-readings.index', ['month' => $gasMeterReading->bill_month->format('Y-m')])
-            ->with('success', 'Gas reading confirmed and saved for '.$gasMeterReading->flat->name.'.');
+            ->with('success', 'Gas reading confirmed and saved for '.$flat->name.'.');
     }
 
     public function destroy(GasMeterReading $gasMeterReading): RedirectResponse
