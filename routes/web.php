@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AttachmentController;
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\AttachmentMediaController;
 use App\Http\Controllers\Admin\CollectionController;
 use App\Http\Controllers\Admin\CommonWaterController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
@@ -44,6 +45,11 @@ Route::get('/flats/{flat}/statements/gas', [StatementController::class, 'gas'])-
 Route::get('/flats/{flat}/statements/others', [StatementController::class, 'others'])->name('public.statements.others');
 Route::get('/statements/print', [StatementPrintController::class, 'building'])->name('public.statements.print-building');
 Route::get('/flats/{flat}/statements/print', [StatementPrintController::class, 'show'])->name('public.statements.print');
+
+// Public shareable attachment media (no auth; bypasses /storage symlink host issues)
+Route::get('/media/{token}', [AttachmentMediaController::class, 'show'])
+    ->where('token', '[A-Za-z0-9]{20,64}')
+    ->name('attachments.media');
 
 Route::middleware(['auth'])->group(function () {
     Route::post('device-tokens', [DeviceTokenController::class, 'store'])->name('device-tokens.store');

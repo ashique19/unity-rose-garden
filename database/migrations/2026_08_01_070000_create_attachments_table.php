@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('attachments', function (Blueprint $table) {
             $table->id();
+            $table->string('public_token', 64)->unique();
             $table->string('title');
             $table->string('original_name')->nullable();
             $table->string('path');

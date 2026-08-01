@@ -66,6 +66,32 @@ class AttachmentGalleryTest extends TestCase
         $this->assertSame(900, $attachment->height);
         $this->assertTrue(Storage::disk('public')->exists($attachment->path));
         $this->assertStringEndsWith('.jpg', $attachment->path);
+        $this->assertNotEmpty($attachment->public_token);
+        $this->assertStringContainsString('/media/'.$attachment->public_token, $attachment->url());
+    }
+
+    #[Test]
+    public function media_url_is_public_and_serves_file(): void
+    {
+        Storage::fake('public');
+        $this->seed(DatabaseSeeder::class);
+        $user = User::query()->where('phone', '01785636359')->firstOrFail();
+
+        $this->actingAs($user)
+            ->postJson(route('admin.attachments.store'), [
+                'photo' => UploadedFile::fake()->image('bill.jpg', 800, 600),
+                'title' => 'Share me',
+            ])
+            ->assertOk();
+
+        $attachment = Attachment::query()->firstOrFail();
+
+        // Guest (no auth) can open share link — avoids /storage symlink 403.
+        auth()->logout();
+
+        $this->get(route('attachments.media', $attachment->public_token))
+            ->assertOk()
+            ->assertHeader('Content-Type', 'image/jpeg');
     }
 
     #[Test]
