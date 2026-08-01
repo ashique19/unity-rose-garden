@@ -97,6 +97,10 @@ class MonthGenerateTest extends TestCase
         $cleaner = $statement->lines->firstWhere('bill_type_key', 'cleaner');
         $this->assertNotNull($cleaner);
         $this->assertEquals(200, (float) $cleaner->amount);
+
+        $garbage = $statement->lines->firstWhere('bill_type_key', 'garbage');
+        $this->assertNotNull($garbage);
+        $this->assertEquals(100, (float) $garbage->amount);
     }
 
     #[Test]

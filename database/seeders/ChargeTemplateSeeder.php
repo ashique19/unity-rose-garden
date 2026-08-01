@@ -12,6 +12,7 @@ class ChargeTemplateSeeder extends Seeder
     {
         $cleaner = BillType::query()->where('key', 'cleaner')->first();
         $electricity = BillType::query()->where('key', 'common_electricity')->first();
+        $garbage = BillType::query()->where('key', 'garbage')->first();
 
         $templates = [
             [
@@ -27,6 +28,13 @@ class ChargeTemplateSeeder extends Seeder
                 'default_amount' => 150,
                 'is_building_wide' => true,
                 'bill_type_id' => $electricity?->id,
+            ],
+            [
+                'charge_key' => 'garbage',
+                'label' => 'Garbage',
+                'default_amount' => 100,
+                'is_building_wide' => true,
+                'bill_type_id' => $garbage?->id,
             ],
         ];
 

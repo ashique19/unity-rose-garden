@@ -7,7 +7,7 @@
     <div class="container mx-auto py-12 px-4 min-h-screen" x-data="{ 
             isEditOpen: false, 
             editAction: '', 
-            editForm: { charge_key: '', label: '', default_amount: '', is_building_wide: false } 
+            editForm: { bill_type_id: '', charge_key: '', label: '', default_amount: '', is_building_wide: false } 
         }">
 
         <div class="mb-8 flex justify-between items-center bg-white p-6 rounded-lg shadow-sm border border-gray-100">
@@ -53,11 +53,12 @@
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1" for="bill_type_id">Bill type</label>
                         <select id="bill_type_id" name="bill_type_id" class="form-select text-sm">
-                            <option value="">Optional…</option>
+                            <option value="">Select bill type…</option>
                             @foreach($billTypes as $type)
                                 <option value="{{ $type->id }}" @selected(old('bill_type_id') == $type->id)>{{ $type->label }}</option>
                             @endforeach
                         </select>
+                        <span class="text-[10px] text-gray-400 block mt-1">Required when applying building-wide (otherwise the charge is skipped on generate).</span>
                     </div>
 
                     <div>
@@ -132,6 +133,7 @@
                                             <button class="btn btn-sm btn-light text-xs font-semibold px-3 border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-100" 
                                                 @click="
                                                     editAction = '{{ route('charge-templates.update', $template->id) }}';
+                                                    editForm.bill_type_id = '{{ $template->bill_type_id ?? '' }}';
                                                     editForm.charge_key = '{{ $template->charge_key }}';
                                                     editForm.label = '{{ $template->label }}';
                                                     editForm.default_amount = '{{ $template->default_amount }}';
@@ -153,7 +155,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="text-center py-8 text-gray-400 text-xs italic">No templates defined. Use the input form to seed values.</td>
+                                    <td colspan="6" class="text-center py-8 text-gray-400 text-xs italic">No templates defined. Use the input form to seed values.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -181,6 +183,17 @@
                 <form x-bind:action="editAction" method="POST" class="p-6 space-y-4">
                     @csrf
                     @method('PUT')
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1">Bill type / Charge type</label>
+                        <select name="bill_type_id" x-model="editForm.bill_type_id" class="form-select text-sm" :required="editForm.is_building_wide">
+                            <option value="">Select bill type…</option>
+                            @foreach($billTypes as $type)
+                                <option value="{{ $type->id }}">{{ $type->label }}</option>
+                            @endforeach
+                        </select>
+                        <span class="text-[10px] text-gray-400 block mt-1">Required for building-wide templates to appear on generated bills.</span>
+                    </div>
 
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1">System Slug (Locked)</label>
