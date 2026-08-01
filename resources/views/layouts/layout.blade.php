@@ -52,6 +52,12 @@
               <a href="{{ route('admin.expense-heads.index') }}">Expense heads</a>
             </div>
           @endif
+          @if(auth()->user()->hasAnyRole(['admin', 'secretary', 'treasurer']))
+            <div class="mobile-menu-section">
+              <div class="mobile-menu-label">Media</div>
+              <a href="{{ route('admin.attachments.index') }}">Attachments</a>
+            </div>
+          @endif
           @if(auth()->user()->hasAnyRole(['admin', 'secretary']))
             <div class="mobile-menu-section">
               <div class="mobile-menu-label">Billing</div>
@@ -100,6 +106,9 @@
                 <li><a href="{{ route('admin.expense-heads.index') }}">Expense heads</a></li>
               </ul>
             </li>
+          @endif
+          @if(auth()->user()->hasAnyRole(['admin', 'secretary', 'treasurer']))
+            <li><a href="{{ route('admin.attachments.index') }}">Attachments</a></li>
           @endif
           @if(auth()->user()->hasAnyRole(['admin', 'secretary']))
             <li class="nav-group">

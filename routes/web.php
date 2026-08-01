@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AttachmentController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\CollectionController;
 use App\Http\Controllers\Admin\CommonWaterController;
@@ -66,6 +67,12 @@ Route::middleware(['auth'])->group(function () {
 
     Route::middleware(['role:admin,secretary'])->group(function () {
         Route::resource('charge-templates', ChargeTemplateController::class)->except(['create', 'edit', 'show']);
+    });
+
+    Route::middleware(['role:admin,secretary,treasurer'])->prefix('admin')->name('admin.')->group(function () {
+        Route::get('attachments', [AttachmentController::class, 'index'])->name('attachments.index');
+        Route::post('attachments', [AttachmentController::class, 'store'])->name('attachments.store');
+        Route::delete('attachments/{attachment}', [AttachmentController::class, 'destroy'])->name('attachments.destroy');
     });
 
     Route::middleware(['role:admin,secretary'])->prefix('admin')->name('admin.')->group(function () {
