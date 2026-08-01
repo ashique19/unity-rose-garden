@@ -149,4 +149,22 @@ class MonthGenerateTest extends TestCase
             ->assertSee('2A')
             ->assertDontSee('Pending: 3A', false);
     }
+
+    #[Test]
+    public function generate_page_shows_previous_generated_bills_tree(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $user = User::query()->where('phone', '01785636359')->firstOrFail();
+
+        $this->actingAs($user)
+            ->get(route('admin.generate.index', ['month' => '2026-05']))
+            ->assertOk()
+            ->assertSee('Generated Bills')
+            ->assertSee('May 2026')
+            ->assertSee('Gas')
+            ->assertSee('tree breakdown by bill head')
+            ->assertSee('2A')
+            ->assertSee('Month total');
+    }
 }

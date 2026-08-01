@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\MonthlyStatement;
 use App\Models\User;
 use App\Services\FcmPushService;
+use App\Services\GeneratedBillsTree;
 use App\Services\MonthGenerateReadiness;
 use App\Services\MonthStatementGenerator;
 use App\Support\Auditor;
@@ -17,8 +18,11 @@ use Illuminate\View\View;
 
 class MonthGenerateController extends Controller
 {
-    public function index(Request $request, MonthGenerateReadiness $readiness): View
-    {
+    public function index(
+        Request $request,
+        MonthGenerateReadiness $readiness,
+        GeneratedBillsTree $generatedBills
+    ): View {
         $month = $this->resolveMonth($request->query('month'));
 
         $existingCount = MonthlyStatement::query()
@@ -30,6 +34,7 @@ class MonthGenerateController extends Controller
             'existingCount' => $existingCount,
             'defaultPricePerKg' => 148,
             'readiness' => $readiness->forMonth($month),
+            'generatedMonths' => $generatedBills->months(),
         ]);
     }
 
