@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
 use App\Models\Flat;
+use App\Models\MonthlyStatement;
+use App\Support\BillMonth;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
@@ -13,7 +16,15 @@ class HomeController extends Controller
     {
         $flats = $this->sortedFlats(Flat::query()->get());
 
-        return view('public.home', compact('flats'));
+        $latest = MonthlyStatement::query()->max('bill_month');
+        $printMonth = $latest
+            ? BillMonth::parse(Carbon::parse($latest)->toDateString())
+            : BillMonth::parse(null);
+
+        return view('public.home', [
+            'flats' => $flats,
+            'printMonth' => $printMonth,
+        ]);
     }
 
     private function sortedFlats(Collection $flats): Collection

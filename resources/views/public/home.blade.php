@@ -3,9 +3,18 @@
 @section('content')
 <div class="features-section pt-20 pb-20">
     <div class="container">
-        <div class="mb-5 text-center text-md-start">
-            <h1 class="fw-bold text-dark mb-1">Flats</h1>
-            <p class="text-muted fs-5 mb-0">Monthly flat statements</p>
+        <div class="mb-5 d-flex flex-column flex-md-row align-items-md-center justify-content-md-between gap-3 text-center text-md-start">
+            <div>
+                <h1 class="fw-bold text-dark mb-1">Flats</h1>
+                <p class="text-muted fs-5 mb-0">Monthly flat statements</p>
+            </div>
+            <div>
+                <a href="{{ route('public.statements.print-building', ['month' => $printMonth->format('Y-m')]) }}"
+                   class="btn btn-outline-dark px-4 py-2">
+                    Print building bills
+                    <span class="text-muted small ms-1">({{ $printMonth->format('M Y') }})</span>
+                </a>
+            </div>
         </div>
 
         <div class="row g-3">

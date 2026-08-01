@@ -41,6 +41,7 @@ Route::get('/flats', function () {
 Route::get('/flats/{flat}', [PublicFlatController::class, 'show'])->name('public.flats.show');
 Route::get('/flats/{flat}/statements/gas', [StatementController::class, 'gas'])->name('public.statements.gas');
 Route::get('/flats/{flat}/statements/others', [StatementController::class, 'others'])->name('public.statements.others');
+Route::get('/statements/print', [StatementPrintController::class, 'building'])->name('public.statements.print-building');
 Route::get('/flats/{flat}/statements/print', [StatementPrintController::class, 'show'])->name('public.statements.print');
 
 Route::middleware(['auth'])->group(function () {
