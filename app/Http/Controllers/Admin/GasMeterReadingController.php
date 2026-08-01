@@ -134,7 +134,7 @@ class GasMeterReadingController extends Controller
             }
             $reading->update([
                 'photo_path' => $path,
-                // Clear stale OCR when a new photo arrives — admin must request again.
+                // Keep photo for later manual entry; clear any stale OCR suggestion.
                 'gemini_suggestion' => null,
             ]);
         } else {
@@ -160,10 +160,41 @@ class GasMeterReadingController extends Controller
             'reading_id' => $reading->id,
             'flat_id' => $flat->id,
             'bill_month' => $month->format('Y-m'),
-            'photo_url' => asset('storage/'.$path),
+            'photo_url' => route('admin.gas-readings.photo-file', [
+                'flat' => $flat,
+                'month' => $month->format('Y-m'),
+            ]),
             'photo_path' => $path,
             'previous_m3' => (float) $reading->previous_m3,
-            'message' => 'Photo saved on server. You can request OCR when ready.',
+            'message' => 'Photo saved for later use. Enter the reading manually when ready.',
+        ]);
+    }
+
+    /**
+     * Serve stored meter photo without relying on /storage symlink.
+     */
+    public function showPhoto(Request $request, Flat $flat)
+    {
+        if (! $flat->isBillTypeEnabled('gas')) {
+            abort(404);
+        }
+
+        $month = $this->resolveMonth($request->query('month'));
+        $reading = GasMeterReading::query()
+            ->where('flat_id', $flat->id)
+            ->whereDate('bill_month', $month->toDateString())
+            ->first();
+
+        if (! $reading?->photo_path || ! Storage::disk('public')->exists($reading->photo_path)) {
+            abort(404);
+        }
+
+        $absolute = Storage::disk('public')->path($reading->photo_path);
+        $mime = Storage::disk('public')->mimeType($reading->photo_path) ?: 'image/jpeg';
+
+        return response()->file($absolute, [
+            'Content-Type' => $mime,
+            'Cache-Control' => 'private, max-age=3600',
         ]);
     }
 

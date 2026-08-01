@@ -92,6 +92,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('gas-readings', [GasMeterReadingController::class, 'store'])->name('gas-readings.store');
         Route::get('gas-readings/{flat}/assist', [GasMeterReadingController::class, 'assist'])->name('gas-readings.assist');
         Route::post('gas-readings/{flat}/photo', [GasMeterReadingController::class, 'uploadPhoto'])->name('gas-readings.photo');
+        Route::get('gas-readings/{flat}/photo-file', [GasMeterReadingController::class, 'showPhoto'])->name('gas-readings.photo-file');
         Route::post('gas-readings/{flat}/ocr', [GasMeterReadingController::class, 'requestOcr'])->name('gas-readings.ocr');
         Route::post('gas-readings/{flat}/suggest', [GasMeterReadingController::class, 'suggest'])->name('gas-readings.suggest');
         Route::put('gas-readings/{gasMeterReading}', [GasMeterReadingController::class, 'update'])->name('gas-readings.update');

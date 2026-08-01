@@ -38,7 +38,8 @@ class OfflineGasPhotoFlowTest extends TestCase
             ]);
 
         $response->assertOk()
-            ->assertJsonPath('ok', true);
+            ->assertJsonPath('ok', true)
+            ->assertJsonPath('message', 'Photo saved for later use. Enter the reading manually when ready.');
 
         $reading = GasMeterReading::query()
             ->where('flat_id', $flat->id)
@@ -47,6 +48,13 @@ class OfflineGasPhotoFlowTest extends TestCase
 
         $this->assertNotNull($reading->photo_path);
         $this->assertNull($reading->gemini_suggestion);
+
+        $this->actingAs($user)
+            ->get(route('admin.gas-readings.index', ['month' => '2026-07']))
+            ->assertOk()
+            ->assertSee('Saved for later')
+            ->assertDontSee('>OCR</button>', false)
+            ->assertDontSee('Set <code>GEMINI_API_KEY</code>', false);
     }
 
     #[Test]

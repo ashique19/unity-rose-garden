@@ -2,15 +2,14 @@
 
 @section('content')
 <div class="features-section pt-20 pb-20" id="gas-readings-offline"
-     data-month="{{ $selectedMonth->format('Y-m') }}"
-     data-gemini-ready="{{ $geminiReady ? '1' : '0' }}">
+     data-month="{{ $selectedMonth->format('Y-m') }}">
     <div class="container">
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3 mb-3">
             <div>
                 <h1 class="fw-bold text-dark mb-1">Gas meter readings</h1>
                 <p class="text-muted mb-0">
                     Garage workflow: <strong>Photo</strong> stores a small image in this browser (works offline),
-                    then <strong>Sync</strong> uploads when you have signal. <strong>OCR</strong> runs only after the photo is on the server.
+                    then <strong>Sync</strong> uploads when you have signal. Photos are kept for later use — enter readings manually.
                 </p>
             </div>
             <form method="get" class="d-flex align-items-center gap-2">
@@ -27,9 +26,6 @@
                 <span id="offline-queue-count" class="badge text-bg-warning ms-1 d-none">0</span>
             </button>
             <span id="sync-status" class="small text-muted"></span>
-            @unless($geminiReady)
-                <span class="small text-warning">Set <code>GEMINI_API_KEY</code> to enable OCR.</span>
-            @endunless
         </div>
 
         <input type="file" id="offline-camera-input" accept="image/*" capture="environment" class="d-none">
@@ -56,7 +52,7 @@
                         <th>Previous m³</th>
                         <th>Current m³</th>
                         <th>Used</th>
-                        <th>Photo / OCR</th>
+                        <th>Photo</th>
                         <th style="min-width: 220px;"></th>
                     </tr>
                 </thead>
@@ -69,6 +65,9 @@
                             $readingDateDefault = $reading?->reading_date?->format('Y-m-d')
                                 ?? $selectedMonth->copy()->endOfMonth()->format('Y-m-d');
                             $formId = $reading ? 'gas-update-'.$reading->id : 'gas-store-'.$flat->id;
+                            $photoUrl = $hasPhoto
+                                ? route('admin.gas-readings.photo-file', ['flat' => $flat, 'month' => $selectedMonth->format('Y-m')])
+                                : null;
                         @endphp
                         <tr data-flat-row="{{ $flat->id }}"
                             data-flat-name="{{ $flat->name }}"
@@ -78,9 +77,11 @@
                                 {{ $flat->name }}
                                 @if($hasPhoto)
                                     <div class="mt-1">
-                                        <img data-photo-thumb="{{ $flat->id }}"
-                                             src="{{ asset('storage/'.$reading->photo_path) }}"
-                                             alt="" class="rounded border" style="max-height: 40px;">
+                                        <a href="{{ $photoUrl }}" target="_blank" rel="noopener">
+                                            <img data-photo-thumb="{{ $flat->id }}"
+                                                 src="{{ $photoUrl }}"
+                                                 alt="" class="rounded border" style="max-height: 40px;">
+                                        </a>
                                     </div>
                                 @else
                                     <img data-photo-thumb="{{ $flat->id }}" alt="" class="rounded border d-none" style="max-height: 40px;">
@@ -104,15 +105,8 @@
                                 {{ $reading ? number_format($reading->consumedM3(), 2) : '—' }}
                             </td>
                             <td>
-                                <div data-ocr-value="{{ $flat->id }}" class="small">
-                                    @if($reading?->gemini_suggestion !== null)
-                                        {{ number_format((float) $reading->gemini_suggestion, 2) }}
-                                    @else
-                                        —
-                                    @endif
-                                </div>
                                 <div data-photo-status="{{ $flat->id }}" class="small photo-status text-muted">
-                                    {{ $hasPhoto ? 'Photo on server' : 'No photo' }}
+                                    {{ $hasPhoto ? 'Saved for later' : 'No photo' }}
                                 </div>
                             </td>
                             <td class="text-nowrap" data-actions-cell="{{ $flat->id }}">
@@ -144,11 +138,6 @@
                                         data-photo-btn="{{ $flat->id }}"
                                         data-upload-url="{{ route('admin.gas-readings.photo', $flat) }}"
                                         data-reading-date="{{ $readingDateDefault }}">Photo</button>
-                                <button type="button" class="btn btn-sm btn-outline-info"
-                                        data-ocr-btn="{{ $flat->id }}"
-                                        data-ocr-url="{{ route('admin.gas-readings.ocr', $flat) }}"
-                                        data-has-photo="{{ $hasPhoto ? '1' : '0' }}"
-                                        {{ ($hasPhoto && $geminiReady) ? '' : 'disabled' }}>OCR</button>
                                 <button type="submit"
                                         form="{{ $formId }}"
                                         class="btn btn-sm {{ $reading ? 'btn-outline-primary' : 'btn-primary' }}"
@@ -174,5 +163,5 @@
 @endsection
 
 @section('js')
-<script src="/js/gas-meter-offline.js"></script>
+<script src="/js/gas-meter-offline.js?v=2"></script>
 @endsection

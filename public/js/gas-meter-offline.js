@@ -2,7 +2,7 @@
  * Offline-friendly gas meter photo capture:
  * 1) Camera → compress → IndexedDB (works without network)
  * 2) Sync to server when online
- * 3) Request OCR only after photo is on the server
+ * Photos are kept for later use; readings are entered manually (no OCR on this page).
  */
 (function () {
   const DB_NAME = 'urg-gas-photos';
@@ -100,12 +100,6 @@
     el.className = 'small photo-status ' + (kind || 'text-muted');
   }
 
-  function setOcrButton(flatId, enabled) {
-    const btn = document.querySelector('[data-ocr-btn="' + flatId + '"]');
-    if (!btn) return;
-    btn.disabled = !enabled;
-  }
-
   async function refreshLocalBadges(month) {
     const all = await idbGetAll();
     const pending = all.filter((r) => r.billMonth === month && !r.synced);
@@ -147,8 +141,7 @@
     }
 
     await idbDelete(record.id);
-    setStatus(record.flatId, 'Photo on server', 'text-success');
-    setOcrButton(record.flatId, true);
+    setStatus(record.flatId, 'Saved for later', 'text-success');
 
     const thumb = document.querySelector('[data-photo-thumb="' + record.flatId + '"]');
     if (thumb && data.photo_url) {
@@ -205,50 +198,10 @@
       synced: false,
     });
     setStatus(flatId, 'Queued offline', 'text-warning');
-    setOcrButton(flatId, false);
     await refreshLocalBadges(month);
 
     if (navigator.onLine) {
       await syncAll(month);
-    }
-  }
-
-  async function requestOcr(flatId, month, ocrUrl) {
-    setStatus(flatId, 'Requesting OCR…', 'text-muted');
-    const res = await fetch(ocrUrl, {
-      method: 'POST',
-      headers: {
-        'X-CSRF-TOKEN': csrf(),
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ bill_month: month }),
-      credentials: 'same-origin',
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      setStatus(flatId, data.message || 'OCR failed', 'text-danger');
-      return;
-    }
-
-    setStatus(flatId, 'OCR: ' + data.gemini_suggestion + ' m³ — confirm & save', 'text-info');
-    const ocrCell = document.querySelector('[data-ocr-value="' + flatId + '"]');
-    if (ocrCell) ocrCell.textContent = Number(data.gemini_suggestion).toFixed(2);
-
-    const currentInput =
-      document.querySelector('input[form="gas-update-' + (data.reading_id || '') + '"][name="current_m3"]') ||
-      document.querySelector('#gas-store-' + flatId + ' ~ td input[name="current_m3"], tr [form="gas-store-' + flatId + '"][name="current_m3"]') ||
-      document.querySelector('input[form="gas-store-' + flatId + '"][name="current_m3"]') ||
-      document.querySelector('input[form="gas-update-' + data.reading_id + '"][name="current_m3"]');
-
-    // Prefer explicit data attribute on the row.
-    const rowInput = document.querySelector('[data-current-input="' + flatId + '"]');
-    if (rowInput) {
-      rowInput.value = data.gemini_suggestion;
-      rowInput.focus();
-    } else if (currentInput) {
-      currentInput.value = data.gemini_suggestion;
-      currentInput.focus();
     }
   }
 
@@ -447,7 +400,6 @@
     if (!root) return;
 
     const month = root.dataset.month;
-    const geminiReady = root.dataset.geminiReady === '1';
     const cameraInput = document.getElementById('offline-camera-input');
 
     let activeFlatId = null;
@@ -483,30 +435,6 @@
       } catch (e) {
         setStatus(activeFlatId, e.message || 'Capture failed', 'text-danger');
       }
-    });
-
-    document.querySelectorAll('[data-ocr-btn]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        if (!geminiReady) {
-          setStatus(btn.getAttribute('data-ocr-btn'), 'GEMINI_API_KEY not set', 'text-warning');
-          return;
-        }
-        if (!navigator.onLine) {
-          setStatus(btn.getAttribute('data-ocr-btn'), 'OCR needs internet', 'text-warning');
-          return;
-        }
-        const flatId = btn.getAttribute('data-ocr-btn');
-        const ocrUrl = btn.getAttribute('data-ocr-url');
-        btn.disabled = true;
-        try {
-          await requestOcr(flatId, month, ocrUrl);
-        } finally {
-          // Re-enable if server still has photo; refreshLocalBadges won't know.
-          const hasServerPhoto = btn.getAttribute('data-has-photo') === '1' ||
-            document.querySelector('[data-photo-status="' + flatId + '"]')?.textContent.includes('server');
-          btn.disabled = false;
-        }
-      });
     });
 
     document.getElementById('sync-photos-btn')?.addEventListener('click', () => syncAll(month));
