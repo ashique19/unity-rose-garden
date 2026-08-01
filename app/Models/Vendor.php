@@ -28,6 +28,11 @@ class Vendor extends Model
         return $this->hasMany(AccountLedgerEntry::class);
     }
 
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Expense::class);
+    }
+
     public function scopeOrdered($query)
     {
         return $query->orderBy('sort_order')->orderBy('name');
@@ -40,6 +45,6 @@ class Vendor extends Model
 
     public function isInUse(): bool
     {
-        return $this->ledgerEntries()->exists();
+        return $this->ledgerEntries()->exists() || $this->expenses()->exists();
     }
 }

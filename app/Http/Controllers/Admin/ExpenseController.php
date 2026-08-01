@@ -4,12 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AccountLedgerEntry;
+use App\Models\Attachment;
 use App\Models\Building;
 use App\Models\Expense;
 use App\Models\ExpenseHead;
+use App\Models\Vendor;
 use App\Support\Auditor;
 use App\Support\BillMonth;
-use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,7 +24,7 @@ class ExpenseController extends Controller
         $headId = $request->query('head');
 
         $query = Expense::query()
-            ->with(['expenseHead', 'ledgerEntry'])
+            ->with(['expenseHead', 'ledgerEntry', 'vendor'])
             ->when($from, fn ($q) => $q->whereDate('entry_date', '>=', $from))
             ->when($to, fn ($q) => $q->whereDate('entry_date', '<=', $to))
             ->when($headId, fn ($q) => $q->where('expense_head_id', $headId))
@@ -35,15 +36,32 @@ class ExpenseController extends Controller
         $building = Building::query()->first();
         $balance = $building ? $building->balanceAmount() : 0.0;
 
+        $attachmentIds = $expenses->getCollection()
+            ->flatMap(fn (Expense $expense) => $expense->mediaAttachmentIds())
+            ->unique()
+            ->values();
+
+        $attachmentsById = $attachmentIds->isEmpty()
+            ? collect()
+            : Attachment::query()->whereIn('id', $attachmentIds)->get()->keyBy('id');
+
+        $recentAttachments = Attachment::query()
+            ->orderByDesc('created_at')
+            ->limit(24)
+            ->get();
+
         return view('admin.expenses.index', [
             'expenses' => $expenses,
             'total' => $total,
             'heads' => ExpenseHead::query()->ordered()->get(),
             'activeHeads' => ExpenseHead::query()->active()->ordered()->get(),
+            'vendors' => Vendor::query()->active()->ordered()->get(),
             'from' => $from,
             'to' => $to,
             'selectedHeadId' => $headId,
             'availableBalance' => $balance,
+            'recentAttachments' => $recentAttachments,
+            'attachmentsById' => $attachmentsById,
         ]);
     }
 
@@ -52,7 +70,25 @@ class ExpenseController extends Controller
         $data = $this->validatedExpense($request);
         $head = ExpenseHead::query()->findOrFail($data['expense_head_id']);
 
-        DB::transaction(function () use ($data, $head, $request) {
+        $vendor = $this->resolveVendor($data['vendor_id'] ?? null);
+        if ($vendor === false) {
+            return back()->withErrors([
+                'vendor_id' => 'Selected payee is inactive.',
+            ])->withInput();
+        }
+
+        $media = $this->buildMediaPayload(
+            $data['attachment_ids'] ?? [],
+            $data['media_urls'] ?? null
+        );
+
+        if ($media === null) {
+            return back()->withErrors([
+                'media_urls' => 'One or more media URLs are invalid. Use full http(s) links, one per line.',
+            ])->withInput();
+        }
+
+        DB::transaction(function () use ($data, $head, $request, $vendor, $media) {
             $building = Building::query()->firstOrFail();
             $balanceBefore = $building->balanceAmount();
             $postToLedger = $request->boolean('post_to_ledger');
@@ -63,8 +99,10 @@ class ExpenseController extends Controller
                 'expense_head_id' => $head->id,
                 'amount' => $data['amount'],
                 'entry_date' => $data['entry_date'],
-                'payee' => $data['payee'] ?? null,
+                'vendor_id' => $vendor?->id,
+                'payee' => $vendor?->name,
                 'note' => $data['note'],
+                'media' => $media ?: null,
                 'balance_before' => $balanceBefore,
                 'balance_after' => $balanceAfter,
             ]);
@@ -76,9 +114,11 @@ class ExpenseController extends Controller
             Auditor::log('expense.created', $expense, [
                 'head' => $head->label,
                 'amount' => $data['amount'],
+                'vendor_id' => $vendor?->id,
                 'posted_to_ledger' => $postToLedger,
                 'balance_before' => $balanceBefore,
                 'balance_after' => $balanceAfter,
+                'media_count' => count($media),
             ]);
         });
 
@@ -92,7 +132,25 @@ class ExpenseController extends Controller
         $data = $this->validatedExpense($request);
         $head = ExpenseHead::query()->findOrFail($data['expense_head_id']);
 
-        DB::transaction(function () use ($data, $head, $request, $expense) {
+        $vendor = $this->resolveVendor($data['vendor_id'] ?? null, $expense->vendor_id);
+        if ($vendor === false) {
+            return back()->withErrors([
+                'vendor_id' => 'Selected payee is inactive.',
+            ])->withInput();
+        }
+
+        $media = $this->buildMediaPayload(
+            $data['attachment_ids'] ?? [],
+            $data['media_urls'] ?? null
+        );
+
+        if ($media === null) {
+            return back()->withErrors([
+                'media_urls' => 'One or more media URLs are invalid. Use full http(s) links, one per line.',
+            ])->withInput();
+        }
+
+        DB::transaction(function () use ($data, $head, $request, $expense, $vendor, $media) {
             $building = Building::query()->firstOrFail();
             $postToLedger = $request->boolean('post_to_ledger');
             $ledger = $expense->ledgerEntry;
@@ -106,8 +164,10 @@ class ExpenseController extends Controller
                 'expense_head_id' => $head->id,
                 'amount' => $data['amount'],
                 'entry_date' => $data['entry_date'],
-                'payee' => $data['payee'] ?? null,
+                'vendor_id' => $vendor?->id,
+                'payee' => $vendor?->name,
                 'note' => $data['note'],
+                'media' => $media ?: null,
                 'balance_before' => $balanceBefore,
                 'balance_after' => $balanceAfter,
             ]);
@@ -119,8 +179,10 @@ class ExpenseController extends Controller
                         'entry_date' => $data['entry_date'],
                         'expense_head_id' => $head->id,
                         'category' => $head->label,
-                        'payee' => $data['payee'] ?? null,
+                        'vendor_id' => $vendor?->id,
+                        'payee' => $vendor?->name,
                         'note' => $data['note'],
+                        'media' => $media ?: null,
                     ]);
                 } else {
                     $this->createLedgerEntry($expense->fresh(), $head);
@@ -132,9 +194,11 @@ class ExpenseController extends Controller
             Auditor::log('expense.updated', $expense, [
                 'head' => $head->label,
                 'amount' => $data['amount'],
+                'vendor_id' => $vendor?->id,
                 'posted_to_ledger' => $postToLedger,
                 'balance_before' => $balanceBefore,
                 'balance_after' => $balanceAfter,
+                'media_count' => count($media),
             ]);
         });
 
@@ -168,7 +232,7 @@ class ExpenseController extends Controller
         $headId = $request->query('head');
 
         $expenses = Expense::query()
-            ->with('expenseHead')
+            ->with(['expenseHead', 'vendor'])
             ->when($from, fn ($q) => $q->whereDate('entry_date', '>=', $from))
             ->when($to, fn ($q) => $q->whereDate('entry_date', '<=', $to))
             ->when($headId, fn ($q) => $q->where('expense_head_id', $headId))
@@ -191,11 +255,17 @@ class ExpenseController extends Controller
 
     public function printOne(Request $request, Expense $expense): View
     {
-        $expense->load('expenseHead');
+        $expense->load(['expenseHead', 'vendor']);
+
+        $attachmentIds = $expense->mediaAttachmentIds();
+        $attachmentsById = empty($attachmentIds)
+            ? collect()
+            : Attachment::query()->whereIn('id', $attachmentIds)->get()->keyBy('id');
 
         return view('admin.expenses.print', [
             'building' => Building::query()->first(),
             'expense' => $expense,
+            'mediaLinks' => $expense->resolvedMedia($attachmentsById),
             'printedBy' => $request->user()?->name,
         ]);
     }
@@ -211,21 +281,76 @@ class ExpenseController extends Controller
             'expense_id' => $expense->id,
             'expense_head_id' => $head->id,
             'category' => $head->label,
+            'vendor_id' => $expense->vendor_id,
             'payee' => $expense->payee,
             'note' => $expense->note,
+            'media' => $expense->media,
         ]);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function validatedExpense(Request $request): array
     {
         return $request->validate([
             'expense_head_id' => ['required', 'integer', 'exists:expense_heads,id'],
             'amount' => ['required', 'numeric', 'min:0.01'],
             'entry_date' => ['required', 'date'],
-            'payee' => ['nullable', 'string', 'max:120'],
+            'vendor_id' => ['nullable', 'integer', 'exists:vendors,id'],
             'note' => ['required', 'string', 'max:255'],
             'post_to_ledger' => ['nullable', 'boolean'],
+            'attachment_ids' => ['nullable', 'array'],
+            'attachment_ids.*' => ['integer', 'exists:attachments,id'],
+            'media_urls' => ['nullable', 'string', 'max:4000'],
         ]);
+    }
+
+    /**
+     * @return Vendor|null|false  false when inactive (unless already assigned)
+     */
+    private function resolveVendor(mixed $vendorId, mixed $allowInactiveId = null): Vendor|null|false
+    {
+        if (empty($vendorId)) {
+            return null;
+        }
+
+        $vendor = Vendor::query()->findOrFail($vendorId);
+        if (! $vendor->is_active && (int) $vendor->id !== (int) $allowInactiveId) {
+            return false;
+        }
+
+        return $vendor;
+    }
+
+    /**
+     * @param  list<int|string>  $attachmentIds
+     * @return list<array{attachment_id?: int, url?: string}>|null  null when URL validation fails
+     */
+    private function buildMediaPayload(array $attachmentIds, ?string $mediaUrlsText): ?array
+    {
+        $media = [];
+
+        foreach ($attachmentIds as $id) {
+            $media[] = ['attachment_id' => (int) $id];
+        }
+
+        $raw = trim((string) $mediaUrlsText);
+        if ($raw !== '') {
+            $parts = preg_split('/[\r\n,]+/', $raw) ?: [];
+            foreach ($parts as $part) {
+                $url = trim($part);
+                if ($url === '') {
+                    continue;
+                }
+                if (! filter_var($url, FILTER_VALIDATE_URL) || ! preg_match('#^https?://#i', $url)) {
+                    return null;
+                }
+                $media[] = ['url' => $url];
+            }
+        }
+
+        return $media;
     }
 
     /**

@@ -72,7 +72,7 @@
                 <tr>
                     <td>{{ $expense->entry_date?->format('d M Y') }}</td>
                     <td>{{ $expense->expenseHead?->label ?? '—' }}</td>
-                    <td>{{ $expense->payee ?: '—' }}</td>
+                    <td>{{ $expense->payeeName() ?: '—' }}</td>
                     <td>{{ $expense->note ?: '—' }}</td>
                     <td class="text-end">
                         {{ $expense->balance_before !== null ? number_format((float) $expense->balance_before, 2) : '—' }}

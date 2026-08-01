@@ -10,6 +10,7 @@
             </div>
             <div class="d-flex flex-wrap gap-2">
                 <a href="{{ route('admin.expense-heads.index') }}" class="btn btn-outline-secondary btn-sm">Expense heads</a>
+                <a href="{{ route('admin.payees.index') }}" class="btn btn-outline-secondary btn-sm">Payees</a>
                 <a href="{{ route('admin.expenses.print-list', request()->query()) }}" class="btn btn-outline-primary btn-sm" target="_blank">Print list</a>
             </div>
         </div>
@@ -87,12 +88,75 @@
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">Payee</label>
-                    <input type="text" name="payee" class="form-control" value="{{ old('payee') }}" maxlength="120" placeholder="Optional">
+                    <select name="vendor_id" class="form-select">
+                        <option value="">None</option>
+                        @foreach($vendors as $vendor)
+                            <option value="{{ $vendor->id }}" @selected(old('vendor_id') == $vendor->id)>
+                                {{ $vendor->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <div class="form-text">
+                        <a href="{{ route('admin.payees.index') }}">Manage payees</a>
+                    </div>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Note</label>
                     <input type="text" name="note" class="form-control" value="{{ old('note') }}" required maxlength="255">
                 </div>
+
+                <div class="col-12">
+                    <div class="border rounded-3 p-3 bg-light-subtle">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                            <div>
+                                <div class="fw-semibold">Media (optional)</div>
+                                <div class="text-muted small">Connect uploaded gallery photos and/or paste external media URLs.</div>
+                            </div>
+                            <a href="{{ route('admin.attachments.index') }}" class="small" target="_blank" rel="noopener">Open Attachments</a>
+                        </div>
+
+                        @if($recentAttachments->isNotEmpty())
+                            <div class="mb-3">
+                                <div class="text-muted small mb-2">From gallery</div>
+                                <div class="row g-2">
+                                    @foreach($recentAttachments as $attachment)
+                                        @php
+                                            $checked = collect(old('attachment_ids', []))->contains($attachment->id);
+                                        @endphp
+                                        <div class="col-6 col-md-3 col-lg-2">
+                                            <label class="border rounded-3 bg-white p-2 h-100 d-block position-relative"
+                                                   style="cursor: pointer;">
+                                                <input type="checkbox"
+                                                       name="attachment_ids[]"
+                                                       value="{{ $attachment->id }}"
+                                                       class="form-check-input position-absolute top-0 end-0 m-2"
+                                                       @checked($checked)>
+                                                <div class="ratio ratio-1x1 mb-2 bg-light rounded overflow-hidden">
+                                                    <img src="{{ $attachment->url() }}" alt="{{ $attachment->title }}"
+                                                         style="object-fit: cover; width: 100%; height: 100%;">
+                                                </div>
+                                                <div class="small text-truncate" title="{{ $attachment->title }}">{{ $attachment->title }}</div>
+                                            </label>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @else
+                            <div class="alert alert-secondary small mb-3">
+                                No gallery photos yet.
+                                <a href="{{ route('admin.attachments.index') }}">Upload media</a> first, or paste URLs below.
+                            </div>
+                        @endif
+
+                        <div>
+                            <label class="form-label" for="media_urls">Media URLs</label>
+                            <textarea name="media_urls" id="media_urls" rows="3" class="form-control"
+                                      placeholder="https://example.com/bill.jpg&#10;One URL per line">{{ old('media_urls') }}</textarea>
+                            <div class="form-text">Full http(s) links, one per line (or comma-separated).</div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="col-12">
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" name="post_to_ledger" value="1" id="post_to_ledger" checked>
@@ -118,6 +182,7 @@
                         <th>Head</th>
                         <th>Payee</th>
                         <th>Note</th>
+                        <th>Media</th>
                         <th>Ledger</th>
                         <th class="text-end">Before</th>
                         <th class="text-end">After</th>
@@ -127,11 +192,27 @@
                 </thead>
                 <tbody>
                     @forelse($expenses as $expense)
+                        @php $mediaLinks = $expense->resolvedMedia($attachmentsById); @endphp
                         <tr>
                             <td>{{ $expense->entry_date?->format('d M Y') }}</td>
                             <td>{{ $expense->expenseHead?->label ?? '—' }}</td>
-                            <td>{{ $expense->payee ?: '—' }}</td>
+                            <td>{{ $expense->payeeName() ?: '—' }}</td>
                             <td>{{ $expense->note ?: '—' }}</td>
+                            <td>
+                                @if(count($mediaLinks))
+                                    <div class="d-flex flex-wrap gap-1">
+                                        @foreach($mediaLinks as $i => $media)
+                                            <a href="{{ $media['url'] }}" target="_blank" rel="noopener"
+                                               class="btn btn-sm btn-outline-secondary"
+                                               title="{{ $media['title'] }}">
+                                                {{ $media['source'] === 'gallery' ? 'Photo' : 'URL' }}{{ count($mediaLinks) > 1 ? ' '.($i + 1) : '' }}
+                                            </a>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <span class="text-muted">—</span>
+                                @endif
+                            </td>
                             <td>
                                 @if($expense->ledgerEntry)
                                     <span class="badge text-bg-success">Posted</span>
@@ -162,14 +243,19 @@
                             </td>
                         </tr>
                         <tr class="collapse" id="edit-{{ $expense->id }}">
-                            <td colspan="9" class="bg-light">
-                                <form method="post" action="{{ route('admin.expenses.update', $expense) }}" class="row g-2 p-2 align-items-end">
+                            <td colspan="10" class="bg-light">
+                                @php
+                                    $selectedAttachmentIds = $expense->mediaAttachmentIds();
+                                    $existingMediaUrls = implode("\n", $expense->mediaUrls());
+                                @endphp
+                                <form method="post" action="{{ route('admin.expenses.update', $expense) }}" class="row g-2 p-2">
                                     @csrf
                                     @method('PUT')
                                     <input type="hidden" name="from" value="{{ $from }}">
                                     <input type="hidden" name="to" value="{{ $to }}">
                                     <input type="hidden" name="head" value="{{ $selectedHeadId }}">
                                     <div class="col-md-3">
+                                        <label class="form-label small mb-1">Expense head</label>
                                         <select name="expense_head_id" class="form-select form-select-sm" required>
                                             @foreach($heads as $head)
                                                 <option value="{{ $head->id }}" @selected($expense->expense_head_id == $head->id)>
@@ -179,20 +265,68 @@
                                         </select>
                                     </div>
                                     <div class="col-md-2">
+                                        <label class="form-label small mb-1">Amount</label>
                                         <input type="number" step="0.01" min="0.01" name="amount" class="form-control form-control-sm"
                                                value="{{ $expense->amount }}" required>
                                     </div>
                                     <div class="col-md-2">
+                                        <label class="form-label small mb-1">Date</label>
                                         <input type="date" name="entry_date" class="form-control form-control-sm"
                                                value="{{ $expense->entry_date?->format('Y-m-d') }}" required>
                                     </div>
                                     <div class="col-md-2">
-                                        <input type="text" name="payee" class="form-control form-control-sm" value="{{ $expense->payee }}">
-                                    </div>
-                                    <div class="col-md-2">
-                                        <input type="text" name="note" class="form-control form-control-sm" value="{{ $expense->note }}" required>
+                                        <label class="form-label small mb-1">Payee</label>
+                                        <select name="vendor_id" class="form-select form-select-sm">
+                                            <option value="">None</option>
+                                            @foreach($vendors as $vendor)
+                                                <option value="{{ $vendor->id }}" @selected($expense->vendor_id == $vendor->id)>
+                                                    {{ $vendor->name }}
+                                                </option>
+                                            @endforeach
+                                            @if($expense->vendor_id && ! $vendors->contains('id', $expense->vendor_id) && $expense->vendor)
+                                                <option value="{{ $expense->vendor->id }}" selected>
+                                                    {{ $expense->vendor->name }} (inactive)
+                                                </option>
+                                            @endif
+                                        </select>
                                     </div>
                                     <div class="col-md-3">
+                                        <label class="form-label small mb-1">Note</label>
+                                        <input type="text" name="note" class="form-control form-control-sm" value="{{ $expense->note }}" required>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <div class="border rounded-3 p-3 bg-white">
+                                            <div class="fw-semibold small mb-2">Media (optional)</div>
+                                            @if($recentAttachments->isNotEmpty())
+                                                <div class="row g-2 mb-2">
+                                                    @foreach($recentAttachments as $attachment)
+                                                        <div class="col-6 col-md-3 col-lg-2">
+                                                            <label class="border rounded-3 p-2 h-100 d-block position-relative"
+                                                                   style="cursor: pointer;">
+                                                                <input type="checkbox"
+                                                                       name="attachment_ids[]"
+                                                                       value="{{ $attachment->id }}"
+                                                                       class="form-check-input position-absolute top-0 end-0 m-2"
+                                                                       @checked(in_array($attachment->id, $selectedAttachmentIds, true))>
+                                                                <div class="ratio ratio-1x1 mb-1 bg-light rounded overflow-hidden">
+                                                                    <img src="{{ $attachment->url() }}" alt="{{ $attachment->title }}"
+                                                                         style="object-fit: cover; width: 100%; height: 100%;">
+                                                                </div>
+                                                                <div class="small text-truncate" title="{{ $attachment->title }}">{{ $attachment->title }}</div>
+                                                            </label>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            @endif
+                                            <label class="form-label small" for="media_urls_{{ $expense->id }}">Media URLs</label>
+                                            <textarea name="media_urls" id="media_urls_{{ $expense->id }}" rows="2"
+                                                      class="form-control form-control-sm"
+                                                      placeholder="https://example.com/bill.jpg">{{ $existingMediaUrls }}</textarea>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-8">
                                         <div class="form-check">
                                             <input class="form-check-input" type="checkbox" name="post_to_ledger" value="1"
                                                    id="post_to_ledger_{{ $expense->id }}"
@@ -202,15 +336,15 @@
                                             </label>
                                         </div>
                                     </div>
-                                    <div class="col-md-1">
-                                        <button class="btn btn-sm btn-primary w-100">Save</button>
+                                    <div class="col-md-4 text-md-end">
+                                        <button class="btn btn-sm btn-primary">Save</button>
                                     </div>
                                 </form>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="text-center text-muted py-4">No expenses in this range.</td>
+                            <td colspan="10" class="text-center text-muted py-4">No expenses in this range.</td>
                         </tr>
                     @endforelse
                 </tbody>

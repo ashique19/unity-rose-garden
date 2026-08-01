@@ -58,7 +58,7 @@
             </div>
             <div>
                 <div class="label">Payee</div>
-                <div>{{ $expense->payee ?: '—' }}</div>
+                <div>{{ $expense->payeeName() ?: '—' }}</div>
             </div>
         </div>
         <div class="amount">৳{{ number_format((float) $expense->amount, 2) }}</div>
@@ -78,6 +78,16 @@
             <div class="label">Note</div>
             <div>{{ $expense->note ?: '—' }}</div>
         </div>
+        @if(! empty($mediaLinks))
+            <div style="margin-top: 12px;">
+                <div class="label">Media</div>
+                <ul style="margin: 6px 0 0; padding-left: 18px;">
+                    @foreach($mediaLinks as $media)
+                        <li><a href="{{ $media['url'] }}">{{ $media['title'] }}</a></li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
     </div>
 
     <p class="muted" style="margin-top: 24px;">
