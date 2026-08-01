@@ -60,6 +60,15 @@ class BillType extends Model
     }
 
     /**
+     * Whether admin entry collects previous/current meter readings.
+     * Deep tube-well is a plain monthly total (no meter).
+     */
+    public function usesMeterReadings(): bool
+    {
+        return $this->isCommonMeter() && $this->key !== 'deep_tubewell';
+    }
+
+    /**
      * @return Collection<int, self>
      */
     public static function activeCommonMeters(): Collection

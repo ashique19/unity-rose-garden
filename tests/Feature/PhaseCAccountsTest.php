@@ -167,7 +167,39 @@ class PhaseCAccountsTest extends TestCase
             ->assertOk()
             ->assertSee('Deep tube-well')
             ->assertSee('WASA')
-            ->assertSee('Omit flats');
+            ->assertSee('Omit flats')
+            ->assertSee('Plain monthly bill')
+            ->assertSee('Billing month');
+    }
+
+    #[Test]
+    public function deep_tubewell_save_ignores_meter_readings(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $user = User::query()->where('phone', '01785636359')->firstOrFail();
+
+        $this->actingAs($user)
+            ->post(route('admin.water.store'), [
+                'meter_key' => 'deep_tubewell',
+                'bill_month' => '2026-07',
+                'total_amount' => 900,
+                'previous_reading' => 10,
+                'current_reading' => 20,
+                'reading_date' => '2026-07-15',
+                'note' => 'July deep tube-well',
+            ])
+            ->assertRedirect(route('admin.water.index', ['month' => '2026-07']));
+
+        $row = CommonMeterReading::query()
+            ->where('meter_key', 'deep_tubewell')
+            ->whereDate('bill_month', '2026-07-01')
+            ->firstOrFail();
+
+        $this->assertEquals(900, (float) $row->total_amount);
+        $this->assertNull($row->previous_reading);
+        $this->assertNull($row->current_reading);
+        $this->assertNull($row->reading_date);
+        $this->assertSame('July deep tube-well', $row->note);
     }
 
     #[Test]

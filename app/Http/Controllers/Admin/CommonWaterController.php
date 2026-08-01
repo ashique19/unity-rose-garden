@@ -103,11 +103,14 @@ class CommonWaterController extends Controller
             ->whereDate('bill_month', $month->toDateString())
             ->first();
 
+        // Plain common bills (e.g. deep tube-well) only store month + amount (+ note).
+        $usesMeterReadings = $billType->usesMeterReadings();
+
         $payload = [
             'total_amount' => $data['total_amount'],
-            'previous_reading' => $data['previous_reading'] ?? null,
-            'current_reading' => $data['current_reading'] ?? null,
-            'reading_date' => $data['reading_date'] ?? null,
+            'previous_reading' => $usesMeterReadings ? ($data['previous_reading'] ?? null) : null,
+            'current_reading' => $usesMeterReadings ? ($data['current_reading'] ?? null) : null,
+            'reading_date' => $usesMeterReadings ? ($data['reading_date'] ?? null) : null,
             'note' => $data['note'] ?? null,
         ];
 
