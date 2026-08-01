@@ -2,30 +2,38 @@
 
 @section('content')
 <style>
+    .generated-bills-page {
+        font-size: 1.05rem;
+        line-height: 1.55;
+    }
+    .generated-bills-page .page-lead {
+        font-size: 1.05rem;
+    }
     .generated-bills-tree {
         list-style: none;
         margin: 0;
         padding: 0;
     }
     .generated-bills-tree > li + li {
-        margin-top: 0.75rem;
+        margin-top: 1.15rem;
     }
     .generated-bills-tree details {
         border: 1px solid #e5e7eb;
-        border-radius: 0.75rem;
+        border-radius: 0.85rem;
         background: #fff;
         overflow: hidden;
     }
     .generated-bills-tree summary {
         list-style: none;
         cursor: pointer;
-        padding: 0.85rem 1rem;
+        padding: 1.15rem 1.25rem;
         display: flex;
         flex-wrap: wrap;
         justify-content: flex-start;
-        gap: 0.5rem 0.75rem;
+        gap: 0.65rem 1rem;
         align-items: baseline;
         text-align: left;
+        font-size: 1.08rem;
     }
     .generated-bills-tree summary::-webkit-details-marker {
         display: none;
@@ -34,7 +42,7 @@
         content: '▸';
         flex: 0 0 auto;
         display: inline-block;
-        width: 1rem;
+        width: 1.1rem;
         color: #6b7280;
         transition: transform 0.15s ease;
         text-align: left;
@@ -52,21 +60,22 @@
         margin-left: auto;
         text-align: right;
         white-space: nowrap;
+        font-size: 1.08rem;
     }
     .generated-bills-tree .tree-children {
         list-style: none;
         margin: 0;
-        padding: 0 0 0.75rem 0;
+        padding: 0.35rem 0 1rem 0;
         border-top: 1px solid #f1f5f9;
     }
     .generated-bills-tree .tree-children > li {
         position: relative;
-        padding: 0.35rem 1rem 0.35rem 2.25rem;
+        padding: 0.55rem 1.25rem 0.55rem 2.5rem;
     }
     .generated-bills-tree .tree-children > li::before {
         content: '';
         position: absolute;
-        left: 1.35rem;
+        left: 1.5rem;
         top: 0;
         bottom: 0;
         border-left: 1px solid #d1d5db;
@@ -74,21 +83,21 @@
     .generated-bills-tree .tree-children > li::after {
         content: '';
         position: absolute;
-        left: 1.35rem;
-        top: 1rem;
-        width: 0.65rem;
+        left: 1.5rem;
+        top: 1.25rem;
+        width: 0.75rem;
         border-top: 1px solid #d1d5db;
     }
     .generated-bills-tree .tree-children > li:last-child::before {
         bottom: auto;
-        height: 1rem;
+        height: 1.25rem;
     }
     .generated-bills-tree .head-row,
     .generated-bills-tree .flat-row {
         display: flex;
         flex-wrap: wrap;
         justify-content: flex-start;
-        gap: 0.35rem 0.75rem;
+        gap: 0.45rem 0.9rem;
         align-items: baseline;
         text-align: left;
     }
@@ -98,36 +107,41 @@
         background: transparent;
     }
     .generated-bills-tree .head-details > summary {
-        padding: 0.35rem 0;
+        padding: 0.45rem 0;
+        font-size: 1.05rem;
     }
     .generated-bills-tree .head-details > summary::before {
         content: '▹';
     }
     .generated-bills-tree .flat-children {
         list-style: none;
-        margin: 0.25rem 0 0;
-        padding: 0 0 0 1rem;
+        margin: 0.45rem 0 0;
+        padding: 0 0 0 1.15rem;
     }
     .generated-bills-tree .flat-children li {
-        padding: 0.2rem 0;
+        padding: 0.35rem 0;
         color: #4b5563;
-        font-size: 0.9rem;
+        font-size: 1rem;
+    }
+    .generated-bills-tree .month-actions {
+        padding: 0.25rem 1.25rem 1.25rem;
+        gap: 0.65rem !important;
     }
 </style>
 <div class="features-section pt-20 pb-20">
-    <div class="container" style="max-width: 860px;">
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3 mb-4">
+    <div class="container generated-bills-page" style="max-width: 900px;">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3 mb-4 pb-2">
             <div>
-                <h1 class="fw-bold text-dark mb-1">Generated Bills</h1>
-                <p class="text-muted mb-0">Previous months with a tree breakdown by bill head.</p>
+                <h1 class="fw-bold text-dark mb-2">Generated Bills</h1>
+                <p class="text-muted page-lead mb-0">Previous months with a tree breakdown by bill head.</p>
             </div>
-            <a href="{{ route('admin.generate.index') }}" class="btn btn-outline-primary btn-sm">Back to generate</a>
+            <a href="{{ route('admin.generate.index') }}" class="btn btn-outline-primary">Back to generate</a>
         </div>
 
         @if($generatedMonths->isEmpty())
-            <div class="bg-white border rounded-3 shadow-sm p-4">
-                <p class="text-muted mb-3">No statements generated yet.</p>
-                <a href="{{ route('admin.generate.index') }}" class="btn btn-primary btn-sm">Generate a month</a>
+            <div class="bg-white border rounded-3 shadow-sm p-4 p-md-5">
+                <p class="text-muted mb-4">No statements generated yet.</p>
+                <a href="{{ route('admin.generate.index') }}" class="btn btn-primary">Generate a month</a>
             </div>
         @else
             <ul class="generated-bills-tree">
@@ -140,7 +154,7 @@
                             <summary>
                                 <span class="tree-label">
                                     <span class="fw-semibold">{{ $generated['month']->format('F Y') }}</span>
-                                    <span class="text-muted small ms-1">
+                                    <span class="text-muted ms-1">
                                         {{ $generated['statement_count'] }} flat{{ $generated['statement_count'] === 1 ? '' : 's' }}
                                     </span>
                                 </span>
@@ -154,7 +168,7 @@
                                             <summary class="head-row">
                                                 <span class="tree-label fw-semibold">{{ $head['label'] }}</span>
                                                 <span class="tree-amount">
-                                                    <span class="text-muted small me-2">{{ $head['line_count'] }} line{{ $head['line_count'] === 1 ? '' : 's' }}</span>
+                                                    <span class="text-muted me-2">{{ $head['line_count'] }} line{{ $head['line_count'] === 1 ? '' : 's' }}</span>
                                                     <span class="fw-semibold">৳{{ number_format($head['total'], 2) }}</span>
                                                 </span>
                                             </summary>
@@ -182,12 +196,12 @@
                                 </li>
                             </ul>
 
-                            <div class="px-3 pb-3 d-flex flex-wrap gap-2">
-                                <a class="btn btn-sm btn-outline-primary"
+                            <div class="month-actions d-flex flex-wrap">
+                                <a class="btn btn-outline-primary"
                                    href="{{ route('admin.generate.index', ['month' => $generated['month_key']]) }}">
                                     Open in generator
                                 </a>
-                                <a class="btn btn-sm btn-outline-secondary"
+                                <a class="btn btn-outline-secondary"
                                    href="{{ route('public.statements.print-building', ['month' => $generated['month_key']]) }}"
                                    target="_blank" rel="noopener">
                                     Print building bills
