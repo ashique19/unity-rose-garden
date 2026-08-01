@@ -22,22 +22,36 @@
         padding: 0.85rem 1rem;
         display: flex;
         flex-wrap: wrap;
-        justify-content: space-between;
-        gap: 0.5rem 1rem;
-        align-items: center;
+        justify-content: flex-start;
+        gap: 0.5rem 0.75rem;
+        align-items: baseline;
+        text-align: left;
     }
     .generated-bills-tree summary::-webkit-details-marker {
         display: none;
     }
     .generated-bills-tree summary::before {
         content: '▸';
+        flex: 0 0 auto;
         display: inline-block;
         width: 1rem;
         color: #6b7280;
         transition: transform 0.15s ease;
+        text-align: left;
     }
     .generated-bills-tree details[open] > summary::before {
         transform: rotate(90deg);
+    }
+    .generated-bills-tree .tree-label {
+        flex: 1 1 auto;
+        min-width: 0;
+        text-align: left;
+    }
+    .generated-bills-tree .tree-amount {
+        flex: 0 0 auto;
+        margin-left: auto;
+        text-align: right;
+        white-space: nowrap;
     }
     .generated-bills-tree .tree-children {
         list-style: none;
@@ -73,9 +87,10 @@
     .generated-bills-tree .flat-row {
         display: flex;
         flex-wrap: wrap;
-        justify-content: space-between;
-        gap: 0.35rem 1rem;
+        justify-content: flex-start;
+        gap: 0.35rem 0.75rem;
         align-items: baseline;
+        text-align: left;
     }
     .generated-bills-tree .head-details {
         border: none;
@@ -270,13 +285,13 @@
                         <li>
                             <details @if($isSelected || $loop->first) open @endif>
                                 <summary>
-                                    <span>
+                                    <span class="tree-label">
                                         <span class="fw-semibold">{{ $generated['month']->format('F Y') }}</span>
                                         <span class="text-muted small ms-1">
                                             {{ $generated['statement_count'] }} flat{{ $generated['statement_count'] === 1 ? '' : 's' }}
                                         </span>
                                     </span>
-                                    <span class="fw-semibold">৳{{ number_format($generated['total'], 2) }}</span>
+                                    <span class="tree-amount fw-semibold">৳{{ number_format($generated['total'], 2) }}</span>
                                 </summary>
 
                                 <ul class="tree-children">
@@ -284,8 +299,8 @@
                                         <li>
                                             <details class="head-details">
                                                 <summary class="head-row">
-                                                    <span class="fw-semibold">{{ $head['label'] }}</span>
-                                                    <span>
+                                                    <span class="tree-label fw-semibold">{{ $head['label'] }}</span>
+                                                    <span class="tree-amount">
                                                         <span class="text-muted small me-2">{{ $head['line_count'] }} line{{ $head['line_count'] === 1 ? '' : 's' }}</span>
                                                         <span class="fw-semibold">৳{{ number_format($head['total'], 2) }}</span>
                                                     </span>
@@ -293,13 +308,13 @@
                                                 <ul class="flat-children">
                                                     @foreach($head['flats'] as $flatLine)
                                                         <li class="flat-row">
-                                                            <span>
+                                                            <span class="tree-label">
                                                                 {{ $flatLine['flat'] }}
                                                                 @if($flatLine['note'])
                                                                     <span class="text-muted">· {{ $flatLine['note'] }}</span>
                                                                 @endif
                                                             </span>
-                                                            <span>৳{{ number_format($flatLine['amount'], 2) }}</span>
+                                                            <span class="tree-amount">৳{{ number_format($flatLine['amount'], 2) }}</span>
                                                         </li>
                                                     @endforeach
                                                 </ul>
@@ -309,8 +324,8 @@
                                         <li class="text-muted">No enabled bill lines for this month.</li>
                                     @endforelse
                                     <li class="head-row fw-semibold">
-                                        <span>Month total</span>
-                                        <span>৳{{ number_format($generated['total'], 2) }}</span>
+                                        <span class="tree-label">Month total</span>
+                                        <span class="tree-amount">৳{{ number_format($generated['total'], 2) }}</span>
                                     </li>
                                 </ul>
 
