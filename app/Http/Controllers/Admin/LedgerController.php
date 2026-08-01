@@ -7,6 +7,7 @@ use App\Models\AccountLedgerEntry;
 use App\Models\Attachment;
 use App\Models\ExpenseHead;
 use App\Models\Flat;
+use App\Models\Vendor;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -17,7 +18,7 @@ class LedgerController extends Controller
     public function index(Request $request): View
     {
         $entries = AccountLedgerEntry::query()
-            ->with(['flat', 'expenseHead'])
+            ->with(['flat', 'expenseHead', 'vendor'])
             ->when($request->query('type'), fn ($q, $type) => $q->where('type', $type))
             ->orderByDesc('entry_date')
             ->orderByDesc('id')
@@ -44,6 +45,7 @@ class LedgerController extends Controller
             'entries' => $entries,
             'flats' => $flats,
             'expenseHeads' => ExpenseHead::query()->active()->ordered()->get(),
+            'vendors' => Vendor::query()->active()->ordered()->get(),
             'filterType' => $request->query('type'),
             'recentAttachments' => $recentAttachments,
             'attachmentsById' => $attachmentsById,
@@ -58,7 +60,7 @@ class LedgerController extends Controller
             'entry_date' => ['required', 'date'],
             'flat_id' => ['nullable', 'integer', 'exists:flats,id'],
             'expense_head_id' => ['nullable', 'integer', 'exists:expense_heads,id'],
-            'payee' => ['nullable', 'string', 'max:120'],
+            'vendor_id' => ['nullable', 'integer', 'exists:vendors,id'],
             'category' => ['nullable', 'string', 'max:100'],
             'note' => ['nullable', 'string', 'max:255'],
             'attachment_ids' => ['nullable', 'array'],
@@ -82,6 +84,16 @@ class LedgerController extends Controller
             $data['category'] = $head->label;
         }
 
+        $vendor = null;
+        if (! empty($data['vendor_id'])) {
+            $vendor = Vendor::query()->findOrFail($data['vendor_id']);
+            if (! $vendor->is_active) {
+                return back()->withErrors([
+                    'vendor_id' => 'Selected payee is inactive.',
+                ])->withInput();
+            }
+        }
+
         $media = $this->buildMediaPayload(
             $data['attachment_ids'] ?? [],
             $data['media_urls'] ?? null
@@ -100,7 +112,8 @@ class LedgerController extends Controller
             'flat_id' => $data['flat_id'] ?? null,
             'collection_id' => null,
             'expense_head_id' => $head?->id,
-            'payee' => $data['payee'] ?? null,
+            'vendor_id' => $vendor?->id,
+            'payee' => $vendor?->name,
             'category' => $data['category'] ?? null,
             'note' => $data['note'] ?? null,
             'media' => $media ?: null,

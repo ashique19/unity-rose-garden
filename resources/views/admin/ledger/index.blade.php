@@ -66,7 +66,17 @@
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">Payee</label>
-                    <input type="text" name="payee" class="form-control" maxlength="120" value="{{ old('payee') }}">
+                    <select name="vendor_id" class="form-select">
+                        <option value="">None</option>
+                        @foreach($vendors as $vendor)
+                            <option value="{{ $vendor->id }}" @selected(old('vendor_id') == $vendor->id)>
+                                {{ $vendor->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <div class="form-text">
+                        <a href="{{ route('admin.payees.index') }}">Manage payees</a>
+                    </div>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Note</label>
@@ -160,7 +170,7 @@
                             </td>
                             <td>{{ $entry->flat?->name ?? '—' }}</td>
                             <td>{{ $entry->expenseHead?->label ?? ($entry->category ? ucfirst($entry->category) : '—') }}</td>
-                            <td>{{ $entry->payee ?: '—' }}</td>
+                            <td>{{ $entry->vendor?->name ?? ($entry->payee ?: '—') }}</td>
                             <td class="text-muted">{{ $entry->note ?: '—' }}</td>
                             <td>
                                 @if(count($mediaLinks))

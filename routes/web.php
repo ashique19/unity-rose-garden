@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\GasMeterReadingController;
 use App\Http\Controllers\Admin\LedgerController;
 use App\Http\Controllers\Admin\MonthGenerateController;
 use App\Http\Controllers\Admin\OtherChargeController;
+use App\Http\Controllers\Admin\PayeeController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\BillGenerator;
@@ -123,6 +124,11 @@ Route::middleware(['auth'])->group(function () {
         Route::post('expense-heads', [ExpenseHeadController::class, 'store'])->name('expense-heads.store');
         Route::put('expense-heads/{expenseHead}', [ExpenseHeadController::class, 'update'])->name('expense-heads.update');
         Route::delete('expense-heads/{expenseHead}', [ExpenseHeadController::class, 'destroy'])->name('expense-heads.destroy');
+
+        Route::get('payees', [PayeeController::class, 'index'])->name('payees.index');
+        Route::post('payees', [PayeeController::class, 'store'])->name('payees.store');
+        Route::put('payees/{payee}', [PayeeController::class, 'update'])->name('payees.update');
+        Route::delete('payees/{payee}', [PayeeController::class, 'destroy'])->name('payees.destroy');
 
         Route::get('expenses', [ExpenseController::class, 'index'])->name('expenses.index');
         Route::get('expenses/print', [ExpenseController::class, 'printList'])->name('expenses.print-list');

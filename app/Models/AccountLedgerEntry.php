@@ -22,6 +22,7 @@ class AccountLedgerEntry extends Model
         'category',
         'expense_head_id',
         'payee',
+        'vendor_id',
         'note',
         'media',
     ];
@@ -53,6 +54,11 @@ class AccountLedgerEntry extends Model
     public function expenseHead(): BelongsTo
     {
         return $this->belongsTo(ExpenseHead::class);
+    }
+
+    public function vendor(): BelongsTo
+    {
+        return $this->belongsTo(Vendor::class);
     }
 
     public function isCashIn(): bool
