@@ -8,6 +8,7 @@ use App\Models\Attachment;
 use App\Models\ExpenseHead;
 use App\Models\Flat;
 use App\Models\Vendor;
+use App\Services\LedgerRunningBalance;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -15,15 +16,23 @@ use Illuminate\View\View;
 
 class LedgerController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, LedgerRunningBalance $runningBalance): View
     {
+        $from = $request->query('from');
+        $to = $request->query('to');
+        $type = $request->query('type');
+
         $entries = AccountLedgerEntry::query()
             ->with(['flat', 'expenseHead', 'vendor'])
-            ->when($request->query('type'), fn ($q, $type) => $q->where('type', $type))
+            ->when($type, fn ($q, $value) => $q->where('type', $value))
+            ->when($from, fn ($q) => $q->whereDate('entry_date', '>=', $from))
+            ->when($to, fn ($q) => $q->whereDate('entry_date', '<=', $to))
             ->orderByDesc('entry_date')
             ->orderByDesc('id')
             ->paginate(30)
             ->withQueryString();
+
+        $balancesById = $runningBalance->forEntries($entries->getCollection());
 
         $attachmentIds = $entries->getCollection()
             ->flatMap(fn (AccountLedgerEntry $entry) => $entry->mediaAttachmentIds())
@@ -46,7 +55,10 @@ class LedgerController extends Controller
             'flats' => $flats,
             'expenseHeads' => ExpenseHead::query()->active()->ordered()->get(),
             'vendors' => Vendor::query()->active()->ordered()->get(),
-            'filterType' => $request->query('type'),
+            'filterType' => $type,
+            'from' => $from,
+            'to' => $to,
+            'balancesById' => $balancesById,
             'recentAttachments' => $recentAttachments,
             'attachmentsById' => $attachmentsById,
         ]);

@@ -3,20 +3,35 @@
 @section('content')
 <div class="features-section pt-20 pb-20">
     <div class="container">
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3 mb-4">
-            <div>
-                <h1 class="fw-bold text-dark mb-1">Cashbook ledger</h1>
-                <p class="text-muted mb-0">Cash in (flat optional) and cash out. Optionally link bill photos or media URLs.</p>
+        <div class="mb-4">
+            <h1 class="fw-bold text-dark mb-1">Cashbook ledger</h1>
+            <p class="text-muted mb-0">Cash in (flat optional) and cash out. Optionally link bill photos or media URLs.</p>
+        </div>
+
+        <form method="get" class="row g-2 align-items-end bg-white border rounded-3 shadow-sm p-3 mb-4">
+            <div class="col-md-3">
+                <label for="from" class="form-label">From date</label>
+                <input type="date" name="from" id="from" class="form-control" value="{{ $from }}">
             </div>
-            <form method="get" class="d-flex align-items-center gap-2">
-                <label for="type" class="form-label mb-0">Filter</label>
-                <select name="type" id="type" class="form-select" onchange="this.form.submit()">
+            <div class="col-md-3">
+                <label for="to" class="form-label">To date</label>
+                <input type="date" name="to" id="to" class="form-control" value="{{ $to }}">
+            </div>
+            <div class="col-md-3">
+                <label for="type" class="form-label">Type</label>
+                <select name="type" id="type" class="form-select">
                     <option value="">All</option>
                     <option value="cash_in" @selected($filterType === 'cash_in')>Cash in</option>
                     <option value="cash_out" @selected($filterType === 'cash_out')>Cash out</option>
                 </select>
-            </form>
-        </div>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button class="btn btn-outline-primary flex-grow-1">Search</button>
+                @if($from || $to || $filterType)
+                    <a href="{{ route('admin.ledger.index') }}" class="btn btn-outline-secondary">Clear</a>
+                @endif
+            </div>
+        </form>
 
         @if(session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>
@@ -153,12 +168,17 @@
                         <th>Note</th>
                         <th>Media</th>
                         <th class="text-end">Amount</th>
+                        <th class="text-end">Balance before</th>
+                        <th class="text-end">Balance after</th>
                         <th></th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($entries as $entry)
-                        @php $mediaLinks = $entry->resolvedMedia($attachmentsById); @endphp
+                        @php
+                            $mediaLinks = $entry->resolvedMedia($attachmentsById);
+                            $balances = $balancesById[$entry->id] ?? null;
+                        @endphp
                         <tr>
                             <td>{{ $entry->entry_date?->format('d M Y') }}</td>
                             <td>
@@ -188,6 +208,12 @@
                                 @endif
                             </td>
                             <td class="text-end fw-semibold">{{ number_format((float) $entry->amount, 2) }}</td>
+                            <td class="text-end">
+                                {{ $balances ? number_format($balances['before'], 2) : '—' }}
+                            </td>
+                            <td class="text-end">
+                                {{ $balances ? number_format($balances['after'], 2) : '—' }}
+                            </td>
                             <td>
                                 @unless($entry->collection_id)
                                     <form method="post" action="{{ route('admin.ledger.destroy', $entry) }}"
@@ -203,7 +229,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="text-center text-muted py-4">No ledger entries yet.</td>
+                            <td colspan="11" class="text-center text-muted py-4">No ledger entries for this search.</td>
                         </tr>
                     @endforelse
                 </tbody>
