@@ -106,6 +106,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('water', [CommonWaterController::class, 'store'])->name('water.store');
         Route::delete('water', [CommonWaterController::class, 'destroy'])->name('water.destroy');
 
+        Route::get('generate/history', [MonthGenerateController::class, 'history'])->name('generate.history');
         Route::get('generate', [MonthGenerateController::class, 'index'])->name('generate.index');
         Route::post('generate', [MonthGenerateController::class, 'store'])->name('generate.store');
     });

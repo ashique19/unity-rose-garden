@@ -63,6 +63,7 @@
             <div class="mobile-menu-section">
               <div class="mobile-menu-label">Billing</div>
               <a href="{{ route('admin.generate.index') }}">Generate month</a>
+              <a href="{{ route('admin.generate.history') }}">Generated Bills</a>
               <a href="{{ route('admin.gas-readings.index') }}">Gas readings</a>
               <a href="{{ route('admin.water.index') }}">Water bills</a>
               <a href="{{ route('admin.other-charges.index') }}">Other charges</a>
@@ -117,6 +118,7 @@
               <button type="button" class="nav-group-toggle" aria-expanded="false" aria-haspopup="true">Billing</button>
               <ul class="nav-submenu" role="list">
                 <li><a href="{{ route('admin.generate.index') }}">Generate month</a></li>
+                <li><a href="{{ route('admin.generate.history') }}">Generated Bills</a></li>
                 <li><a href="{{ route('admin.gas-readings.index') }}">Gas readings</a></li>
                 <li><a href="{{ route('admin.water.index') }}">Water bills</a></li>
                 <li><a href="{{ route('admin.other-charges.index') }}">Other charges</a></li>

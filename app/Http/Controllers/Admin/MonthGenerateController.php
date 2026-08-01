@@ -18,11 +18,8 @@ use Illuminate\View\View;
 
 class MonthGenerateController extends Controller
 {
-    public function index(
-        Request $request,
-        MonthGenerateReadiness $readiness,
-        GeneratedBillsTree $generatedBills
-    ): View {
+    public function index(Request $request, MonthGenerateReadiness $readiness): View
+    {
         $month = $this->resolveMonth($request->query('month'));
 
         $existingCount = MonthlyStatement::query()
@@ -34,7 +31,18 @@ class MonthGenerateController extends Controller
             'existingCount' => $existingCount,
             'defaultPricePerKg' => 148,
             'readiness' => $readiness->forMonth($month),
+        ]);
+    }
+
+    public function history(Request $request, GeneratedBillsTree $generatedBills): View
+    {
+        $focusMonth = $request->query('month')
+            ? $this->resolveMonth($request->query('month'))
+            : null;
+
+        return view('admin.generate.history', [
             'generatedMonths' => $generatedBills->months(),
+            'focusMonth' => $focusMonth,
         ]);
     }
 

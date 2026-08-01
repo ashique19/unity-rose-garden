@@ -1,129 +1,28 @@
 @extends('layouts.layout')
 
 @section('content')
-<style>
-    .generated-bills-tree {
-        list-style: none;
-        margin: 0;
-        padding: 0;
-    }
-    .generated-bills-tree > li + li {
-        margin-top: 0.75rem;
-    }
-    .generated-bills-tree details {
-        border: 1px solid #e5e7eb;
-        border-radius: 0.75rem;
-        background: #fff;
-        overflow: hidden;
-    }
-    .generated-bills-tree summary {
-        list-style: none;
-        cursor: pointer;
-        padding: 0.85rem 1rem;
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: flex-start;
-        gap: 0.5rem 0.75rem;
-        align-items: baseline;
-        text-align: left;
-    }
-    .generated-bills-tree summary::-webkit-details-marker {
-        display: none;
-    }
-    .generated-bills-tree summary::before {
-        content: '▸';
-        flex: 0 0 auto;
-        display: inline-block;
-        width: 1rem;
-        color: #6b7280;
-        transition: transform 0.15s ease;
-        text-align: left;
-    }
-    .generated-bills-tree details[open] > summary::before {
-        transform: rotate(90deg);
-    }
-    .generated-bills-tree .tree-label {
-        flex: 1 1 auto;
-        min-width: 0;
-        text-align: left;
-    }
-    .generated-bills-tree .tree-amount {
-        flex: 0 0 auto;
-        margin-left: auto;
-        text-align: right;
-        white-space: nowrap;
-    }
-    .generated-bills-tree .tree-children {
-        list-style: none;
-        margin: 0;
-        padding: 0 0 0.75rem 0;
-        border-top: 1px solid #f1f5f9;
-    }
-    .generated-bills-tree .tree-children > li {
-        position: relative;
-        padding: 0.35rem 1rem 0.35rem 2.25rem;
-    }
-    .generated-bills-tree .tree-children > li::before {
-        content: '';
-        position: absolute;
-        left: 1.35rem;
-        top: 0;
-        bottom: 0;
-        border-left: 1px solid #d1d5db;
-    }
-    .generated-bills-tree .tree-children > li::after {
-        content: '';
-        position: absolute;
-        left: 1.35rem;
-        top: 1rem;
-        width: 0.65rem;
-        border-top: 1px solid #d1d5db;
-    }
-    .generated-bills-tree .tree-children > li:last-child::before {
-        bottom: auto;
-        height: 1rem;
-    }
-    .generated-bills-tree .head-row,
-    .generated-bills-tree .flat-row {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: flex-start;
-        gap: 0.35rem 0.75rem;
-        align-items: baseline;
-        text-align: left;
-    }
-    .generated-bills-tree .head-details {
-        border: none;
-        border-radius: 0;
-        background: transparent;
-    }
-    .generated-bills-tree .head-details > summary {
-        padding: 0.35rem 0;
-    }
-    .generated-bills-tree .head-details > summary::before {
-        content: '▹';
-    }
-    .generated-bills-tree .flat-children {
-        list-style: none;
-        margin: 0.25rem 0 0;
-        padding: 0 0 0 1rem;
-    }
-    .generated-bills-tree .flat-children li {
-        padding: 0.2rem 0;
-        color: #4b5563;
-        font-size: 0.9rem;
-    }
-</style>
 <div class="features-section pt-20 pb-20">
-    <div class="container" style="max-width: 860px;">
-        <h1 class="fw-bold text-dark mb-1">Generate monthly statements</h1>
-        <p class="text-muted mb-4">
-            Upserts statements and lines from gas readings and other charges.
-            Existing collections are preserved.
-        </p>
+    <div class="container" style="max-width: 640px;">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3 mb-4">
+            <div>
+                <h1 class="fw-bold text-dark mb-1">Generate month</h1>
+                <p class="text-muted mb-0">
+                    Check charge readiness, then create or refresh statements for one month.
+                </p>
+            </div>
+            <a href="{{ route('admin.generate.history') }}" class="btn btn-outline-secondary btn-sm">
+                Generated Bills
+            </a>
+        </div>
 
         @if(session('success'))
-            <div class="alert alert-success">{{ session('success') }}</div>
+            <div class="alert alert-success">
+                {{ session('success') }}
+                <div class="mt-2">
+                    <a href="{{ route('admin.generate.history', ['month' => $selectedMonth->format('Y-m')]) }}"
+                       class="alert-link">View Generated Bills</a>
+                </div>
+            </div>
         @endif
         @if($errors->any())
             <div class="alert alert-danger">
@@ -135,108 +34,116 @@
             </div>
         @endif
 
-        <div class="bg-white border rounded-3 shadow-sm p-4 mb-4">
-            <form method="get" class="mb-4">
-                <label for="preview_month" class="form-label">Check readiness for month</label>
-                <input type="month" name="month" id="preview_month" class="form-control"
-                       value="{{ $selectedMonth->format('Y-m') }}" onchange="this.form.submit()">
-            </form>
+        @php
+            $gas = $readiness['gas'];
+            $commonBills = $readiness['common'] ?? [];
+            $commonMissing = collect($commonBills)->where('entered', false)->pluck('label');
+            $monthKey = $selectedMonth->format('Y-m');
+        @endphp
 
-            @php
-                $gas = $readiness['gas'];
-                $commonBills = $readiness['common'] ?? [];
-                $commonMissing = collect($commonBills)->where('entered', false)->pluck('label');
-            @endphp
+        <div class="bg-white border rounded-3 shadow-sm p-4 mb-3">
+            <form method="get" class="mb-0">
+                <label for="preview_month" class="form-label fw-semibold">Bill month</label>
+                <input type="month" name="month" id="preview_month" class="form-control"
+                       value="{{ $monthKey }}" onchange="this.form.submit()">
+            </form>
+        </div>
+
+        <div class="bg-white border rounded-3 shadow-sm p-4 mb-3">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <h2 class="h6 fw-bold mb-0">Charge readiness</h2>
+                @if($readiness['ready'])
+                    <span class="badge text-bg-success">Ready</span>
+                @else
+                    <span class="badge text-bg-warning text-dark">{{ $readiness['pending_count'] }} pending</span>
+                @endif
+            </div>
 
             @if($readiness['ready'])
-                <div class="alert alert-success mb-3">
-                    All required enabled charges are entered for {{ $selectedMonth->format('F Y') }}.
+                <p class="small text-success mb-3">
+                    All required charges are entered for {{ $selectedMonth->format('F Y') }}.
                     @if($commonMissing->isNotEmpty())
-                        Water bills still optional and not entered yet: {{ $commonMissing->implode(', ') }}.
+                        Optional water still missing: {{ $commonMissing->implode(', ') }}.
                     @endif
-                </div>
+                </p>
             @else
-                <div class="alert alert-warning mb-3">
-                    {{ $readiness['pending_count'] }} required item(s) still pending for {{ $selectedMonth->format('F Y') }}.
-                </div>
+                <p class="small text-warning-emphasis mb-3">
+                    Finish pending items below, or generate anyway (missing gas flats are skipped).
+                </p>
             @endif
 
-            <h2 class="h6 fw-bold mb-2">Charge readiness</h2>
-            <ul class="list-unstyled mb-0 small">
-                <li class="mb-3 pb-3 border-bottom">
-                    <div class="d-flex justify-content-between gap-2">
-                        <span class="fw-semibold">
-                            <a href="{{ route('admin.gas-readings.index', ['month' => $selectedMonth->format('Y-m')]) }}">Gas readings</a>
-                        </span>
-                        <span class="{{ $gas['pending_flats'] ? 'text-danger' : 'text-success' }}">
-                            {{ $gas['entered'] }} / {{ $gas['required'] }} flats
-                        </span>
-                    </div>
-                    @if($gas['pending_flats'])
-                        <div class="text-danger mt-1">Pending: {{ implode(', ', $gas['pending_flats']) }}</div>
-                    @else
-                        <div class="text-muted mt-1">All gas-enabled flats have readings.</div>
-                    @endif
-                </li>
-
-                @foreach($commonBills as $common)
-                    <li class="mb-3 pb-3 border-bottom">
-                        <div class="d-flex justify-content-between gap-2">
-                            <span class="fw-semibold">
-                                <a href="{{ route('admin.water.index', ['month' => $selectedMonth->format('Y-m')]) }}">{{ $common['label'] }}</a>
-                                <span class="text-muted fw-normal">(optional · equal split)</span>
-                            </span>
-                            <span class="{{ $common['entered'] ? 'text-success' : 'text-muted' }}">
-                                {{ $common['entered'] ? 'Entered' : 'Not entered' }}
-                            </span>
-                        </div>
-                        <div class="text-muted mt-1">
-                            Would apply to {{ $common['enabled_flats'] }} enabled flat(s) when entered.
-                        </div>
-                    </li>
-                @endforeach
-
-                @foreach($readiness['other'] as $item)
-                    <li class="mb-3 pb-3 border-bottom">
-                        <div class="d-flex justify-content-between gap-2">
-                            <span class="fw-semibold">
-                                @if($item['covered_by_template'])
-                                    {{ $item['label'] }}
-                                    <span class="text-muted fw-normal">(building template)</span>
-                                @else
-                                    <a href="{{ route('admin.other-charges.index', ['month' => $selectedMonth->format('Y-m')]) }}">{{ $item['label'] }}</a>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="text-start">Charge</th>
+                            <th class="text-end">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="text-start">
+                                <a href="{{ route('admin.gas-readings.index', ['month' => $monthKey]) }}">Gas readings</a>
+                                @if($gas['pending_flats'])
+                                    <div class="text-danger small mt-1">Pending: {{ implode(', ', $gas['pending_flats']) }}</div>
                                 @endif
-                            </span>
-                            <span class="{{ $item['pending_flats'] ? 'text-danger' : 'text-success' }}">
-                                @if($item['covered_by_template'])
-                                    Ready for {{ $item['required'] }} flats
-                                @else
-                                    {{ $item['entered'] }} / {{ $item['required'] }} flats
-                                @endif
-                            </span>
-                        </div>
-                        @if($item['covered_by_template'])
-                            <div class="text-muted mt-1">Covered by charge template for all enabled flats.</div>
-                        @elseif($item['pending_flats'])
-                            <div class="text-danger mt-1">Pending: {{ implode(', ', $item['pending_flats']) }}</div>
-                        @else
-                            <div class="text-muted mt-1">Custom charges entered for all enabled flats.</div>
-                        @endif
-                    </li>
-                @endforeach
-            </ul>
+                            </td>
+                            <td class="text-end {{ $gas['pending_flats'] ? 'text-danger' : 'text-success' }}">
+                                {{ $gas['entered'] }} / {{ $gas['required'] }}
+                            </td>
+                        </tr>
 
-            <div class="small text-muted">
-                <a href="{{ route('admin.flat-bill-type-settings.index') }}">Check flat × bill type toggles</a>
+                        @foreach($commonBills as $common)
+                            <tr>
+                                <td class="text-start">
+                                    <a href="{{ route('admin.water.index', ['month' => $monthKey]) }}">{{ $common['label'] }}</a>
+                                    <span class="text-muted small">· optional</span>
+                                </td>
+                                <td class="text-end {{ $common['entered'] ? 'text-success' : 'text-muted' }}">
+                                    {{ $common['entered'] ? 'Entered' : 'Not entered' }}
+                                </td>
+                            </tr>
+                        @endforeach
+
+                        @foreach($readiness['other'] as $item)
+                            <tr>
+                                <td class="text-start">
+                                    @if($item['covered_by_template'])
+                                        {{ $item['label'] }}
+                                        <span class="text-muted small">· template</span>
+                                    @else
+                                        <a href="{{ route('admin.other-charges.index', ['month' => $monthKey]) }}">{{ $item['label'] }}</a>
+                                        @if($item['pending_flats'])
+                                            <div class="text-danger small mt-1">Pending: {{ implode(', ', $item['pending_flats']) }}</div>
+                                        @endif
+                                    @endif
+                                </td>
+                                <td class="text-end {{ $item['pending_flats'] ? 'text-danger' : 'text-success' }}">
+                                    @if($item['covered_by_template'])
+                                        Ready
+                                    @else
+                                        {{ $item['entered'] }} / {{ $item['required'] }}
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="small text-muted mt-3 mb-0">
+                <a href="{{ route('admin.flat-bill-type-settings.index') }}">Flat × bill type toggles</a>
             </div>
         </div>
 
         <div class="bg-white border rounded-3 shadow-sm p-4">
+            <h2 class="h6 fw-bold mb-3">Generate / refresh</h2>
             <form method="post" action="{{ route('admin.generate.store') }}">
                 @csrf
-                <input type="hidden" name="month" value="{{ $selectedMonth->format('Y-m') }}">
+                <input type="hidden" name="month" value="{{ $monthKey }}">
+
                 <div class="mb-3">
-                    <label class="form-label">Bill month</label>
+                    <label class="form-label">Month</label>
                     <input type="text" class="form-control" value="{{ $selectedMonth->format('F Y') }}" disabled>
                 </div>
                 <div class="mb-3">
@@ -246,105 +153,26 @@
                 </div>
 
                 @if($existingCount > 0)
-                    <div class="alert alert-warning small">
+                    <div class="alert alert-warning small mb-3">
                         {{ $existingCount }} statement(s) already exist for this month.
-                        Generating again will refresh lines and keep collections.
+                        Generating again refreshes lines and keeps collections.
+                        <a href="{{ route('admin.generate.history', ['month' => $monthKey]) }}" class="alert-link">
+                            Review existing bills
+                        </a>
                     </div>
                 @endif
 
                 @if(! $readiness['ready'])
-                    <div class="alert alert-secondary small">
-                        You can still generate now; missing gas readings will be skipped for those flats.
-                        Pending custom charges will not create lines until entered.
+                    <div class="alert alert-secondary small mb-3">
+                        You can still generate now. Missing gas readings are skipped; pending custom charges won’t create lines until entered.
                     </div>
                 @endif
 
                 <button type="submit" class="btn btn-primary"
                         onclick="return confirm('Generate / refresh statements for {{ $selectedMonth->format('F Y') }}?')">
-                    Generate / refresh
+                    Generate / refresh {{ $selectedMonth->format('F Y') }}
                 </button>
             </form>
-        </div>
-
-        <div class="bg-white border rounded-3 shadow-sm p-4 mt-4">
-            <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
-                <div>
-                    <h2 class="h5 fw-bold mb-1">Generated Bills</h2>
-                    <p class="text-muted small mb-0">Previous months with a tree breakdown by bill head.</p>
-                </div>
-            </div>
-
-            @if($generatedMonths->isEmpty())
-                <p class="text-muted mb-0">No statements generated yet.</p>
-            @else
-                <ul class="generated-bills-tree">
-                    @foreach($generatedMonths as $generated)
-                        @php
-                            $isSelected = $generated['month_key'] === $selectedMonth->format('Y-m');
-                        @endphp
-                        <li>
-                            <details @if($isSelected || $loop->first) open @endif>
-                                <summary>
-                                    <span class="tree-label">
-                                        <span class="fw-semibold">{{ $generated['month']->format('F Y') }}</span>
-                                        <span class="text-muted small ms-1">
-                                            {{ $generated['statement_count'] }} flat{{ $generated['statement_count'] === 1 ? '' : 's' }}
-                                        </span>
-                                    </span>
-                                    <span class="tree-amount fw-semibold">৳{{ number_format($generated['total'], 2) }}</span>
-                                </summary>
-
-                                <ul class="tree-children">
-                                    @forelse($generated['heads'] as $head)
-                                        <li>
-                                            <details class="head-details">
-                                                <summary class="head-row">
-                                                    <span class="tree-label fw-semibold">{{ $head['label'] }}</span>
-                                                    <span class="tree-amount">
-                                                        <span class="text-muted small me-2">{{ $head['line_count'] }} line{{ $head['line_count'] === 1 ? '' : 's' }}</span>
-                                                        <span class="fw-semibold">৳{{ number_format($head['total'], 2) }}</span>
-                                                    </span>
-                                                </summary>
-                                                <ul class="flat-children">
-                                                    @foreach($head['flats'] as $flatLine)
-                                                        <li class="flat-row">
-                                                            <span class="tree-label">
-                                                                {{ $flatLine['flat'] }}
-                                                                @if($flatLine['note'])
-                                                                    <span class="text-muted">· {{ $flatLine['note'] }}</span>
-                                                                @endif
-                                                            </span>
-                                                            <span class="tree-amount">৳{{ number_format($flatLine['amount'], 2) }}</span>
-                                                        </li>
-                                                    @endforeach
-                                                </ul>
-                                            </details>
-                                        </li>
-                                    @empty
-                                        <li class="text-muted">No enabled bill lines for this month.</li>
-                                    @endforelse
-                                    <li class="head-row fw-semibold">
-                                        <span class="tree-label">Month total</span>
-                                        <span class="tree-amount">৳{{ number_format($generated['total'], 2) }}</span>
-                                    </li>
-                                </ul>
-
-                                <div class="px-3 pb-3 d-flex flex-wrap gap-2">
-                                    <a class="btn btn-sm btn-outline-primary"
-                                       href="{{ route('admin.generate.index', ['month' => $generated['month_key']]) }}">
-                                        Open in generator
-                                    </a>
-                                    <a class="btn btn-sm btn-outline-secondary"
-                                       href="{{ route('public.statements.print-building', ['month' => $generated['month_key']]) }}"
-                                       target="_blank" rel="noopener">
-                                        Print building bills
-                                    </a>
-                                </div>
-                            </details>
-                        </li>
-                    @endforeach
-                </ul>
-            @endif
         </div>
     </div>
 </div>

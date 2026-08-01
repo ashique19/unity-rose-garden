@@ -128,10 +128,11 @@ class MonthGenerateTest extends TestCase
             ->get(route('admin.generate.index', ['month' => '2026-06']))
             ->assertOk()
             ->assertSee('Charge readiness')
-            ->assertSee('All required enabled charges are entered')
-            ->assertSee('15 / 15 flats')
-            ->assertSee('All gas-enabled flats have readings')
-            ->assertSee('building template');
+            ->assertSee('All required charges are entered')
+            ->assertSee('15 / 15')
+            ->assertSee('Generated Bills')
+            ->assertDontSee('Month total')
+            ->assertSee('template');
     }
 
     #[Test]
@@ -144,14 +145,33 @@ class MonthGenerateTest extends TestCase
         $this->actingAs($user)
             ->get(route('admin.generate.index', ['month' => '2026-07']))
             ->assertOk()
-            ->assertSee('required item(s) still pending')
+            ->assertSee('pending')
             ->assertSee('Pending:')
             ->assertSee('2A')
             ->assertDontSee('Pending: 3A', false);
     }
 
     #[Test]
-    public function generate_page_shows_previous_generated_bills_tree(): void
+    public function generated_bills_history_page_shows_tree_breakdown(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $user = User::query()->where('phone', '01785636359')->firstOrFail();
+
+        $this->actingAs($user)
+            ->get(route('admin.generate.history', ['month' => '2026-05']))
+            ->assertOk()
+            ->assertSee('Generated Bills')
+            ->assertSee('May 2026')
+            ->assertSee('Gas')
+            ->assertSee('tree breakdown by bill head')
+            ->assertSee('2A')
+            ->assertSee('Month total')
+            ->assertSee('Back to generate');
+    }
+
+    #[Test]
+    public function generate_page_does_not_embed_history_tree(): void
     {
         $this->seed(DatabaseSeeder::class);
 
@@ -160,11 +180,7 @@ class MonthGenerateTest extends TestCase
         $this->actingAs($user)
             ->get(route('admin.generate.index', ['month' => '2026-05']))
             ->assertOk()
-            ->assertSee('Generated Bills')
-            ->assertSee('May 2026')
-            ->assertSee('Gas')
-            ->assertSee('tree breakdown by bill head')
-            ->assertSee('2A')
-            ->assertSee('Month total');
+            ->assertSee(route('admin.generate.history'), false)
+            ->assertDontSee('Previous months with a tree breakdown');
     }
 }
