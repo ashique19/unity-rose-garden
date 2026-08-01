@@ -97,4 +97,30 @@ class AdminFlatsAndUsersTest extends TestCase
             ->get(route('admin.users.index'))
             ->assertForbidden();
     }
+
+    #[Test]
+    public function admin_can_assign_member_role(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $admin = User::query()->where('phone', '01785636359')->firstOrFail();
+
+        $this->assertTrue(Role::query()->where('name', 'member')->exists());
+
+        $this->actingAs($admin)
+            ->post(route('admin.users.store'), [
+                'name' => 'Flat Member',
+                'phone' => '01788887777',
+                'password' => 'secret',
+                'roles' => ['member'],
+            ])
+            ->assertRedirect(route('admin.users.index'));
+
+        $member = User::query()->where('phone', '01788887777')->firstOrFail();
+        $this->assertTrue($member->isMember());
+        $this->assertFalse($member->isAdmin());
+
+        $this->actingAs($member)
+            ->get(route('admin.users.index'))
+            ->assertForbidden();
+    }
 }

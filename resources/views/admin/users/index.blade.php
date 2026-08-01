@@ -4,7 +4,7 @@
 <div class="features-section pt-20 pb-20">
     <div class="container">
         <h1 class="fw-bold text-dark mb-1">Users</h1>
-        <p class="text-muted mb-4">Add or remove admin staff and assign roles (admin, secretary, treasurer).</p>
+        <p class="text-muted mb-4">Add or remove users and assign roles (admin, secretary, treasurer, member).</p>
 
         @if(session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>

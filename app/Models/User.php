@@ -59,4 +59,9 @@ class User extends Authenticatable
     {
         return $this->hasRole('admin');
     }
+
+    public function isMember(): bool
+    {
+        return $this->hasRole('member');
+    }
 }
