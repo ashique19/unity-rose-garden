@@ -12,7 +12,7 @@ class ChargeTemplateController extends Controller
     public function index()
     {
         $templates = ChargeTemplate::query()->with('billType')->orderBy('created_at', 'desc')->get();
-        $billTypes = BillType::query()->ordered()->whereNotIn('key', ['gas', 'water'])->get();
+        $billTypes = BillType::query()->ordered()->otherCharges()->get();
 
         return view('charge_templates.index', compact('templates', 'billTypes'));
     }

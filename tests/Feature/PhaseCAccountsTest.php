@@ -3,12 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\AccountLedgerEntry;
+use App\Models\BillType;
 use App\Models\Building;
 use App\Models\Collection;
 use App\Models\CommonMeterReading;
 use App\Models\Flat;
 use App\Models\FlatBillTypeSetting;
-use App\Models\BillType;
 use App\Models\MonthlyStatement;
 use App\Models\User;
 use App\Services\MonthStatementGenerator;
@@ -23,12 +23,12 @@ class PhaseCAccountsTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
-    public function water_splits_across_enabled_flats_on_generate(): void
+    public function wasa_splits_across_enabled_flats_on_generate(): void
     {
         $this->seed(DatabaseSeeder::class);
 
         CommonMeterReading::query()->create([
-            'meter_key' => 'water',
+            'meter_key' => 'wasa',
             'bill_month' => '2026-07-01',
             'total_amount' => 1800,
             'reading_date' => '2026-07-31',
@@ -44,26 +44,73 @@ class PhaseCAccountsTest extends TestCase
             ->whereDate('bill_month', '2026-07-01')
             ->firstOrFail();
 
-        $water = $statement->lines->firstWhere('bill_type_key', 'water');
-        $this->assertNotNull($water);
-        $this->assertEquals(100.0, (float) $water->amount);
+        $wasa = $statement->lines->firstWhere('bill_type_key', 'wasa');
+        $this->assertNotNull($wasa);
+        $this->assertEquals(100.0, (float) $wasa->amount);
+        $this->assertSame('WASA – Jul 2026', $wasa->label);
     }
 
     #[Test]
-    public function water_excludes_disabled_flats_from_divisor(): void
+    public function deep_tubewell_and_wasa_both_apply_with_independent_omit(): void
     {
         $this->seed(DatabaseSeeder::class);
 
-        $waterType = BillType::query()->where('key', 'water')->firstOrFail();
+        $deepType = BillType::query()->where('key', 'deep_tubewell')->firstOrFail();
         $flat3a = Flat::query()->where('name', '3A')->firstOrFail();
 
         FlatBillTypeSetting::query()->updateOrCreate(
-            ['flat_id' => $flat3a->id, 'bill_type_id' => $waterType->id],
+            ['flat_id' => $flat3a->id, 'bill_type_id' => $deepType->id],
             ['enabled' => false]
         );
 
         CommonMeterReading::query()->create([
-            'meter_key' => 'water',
+            'meter_key' => 'deep_tubewell',
+            'bill_month' => '2026-07-01',
+            'total_amount' => 1700,
+        ]);
+        CommonMeterReading::query()->create([
+            'meter_key' => 'wasa',
+            'bill_month' => '2026-07-01',
+            'total_amount' => 1800,
+        ]);
+
+        $stats = app(MonthStatementGenerator::class)->generate('2026-07-01', 150);
+
+        // 17 deep + 18 wasa
+        $this->assertSame(35, $stats['water_lines']);
+
+        $flat2a = Flat::query()->where('name', '2A')->firstOrFail();
+        $statement2a = MonthlyStatement::query()
+            ->where('flat_id', $flat2a->id)
+            ->whereDate('bill_month', '2026-07-01')
+            ->firstOrFail();
+
+        $this->assertEquals(100.0, (float) $statement2a->lines->firstWhere('bill_type_key', 'deep_tubewell')->amount);
+        $this->assertEquals(100.0, (float) $statement2a->lines->firstWhere('bill_type_key', 'wasa')->amount);
+
+        $statement3a = MonthlyStatement::query()
+            ->where('flat_id', $flat3a->id)
+            ->whereDate('bill_month', '2026-07-01')
+            ->firstOrFail();
+        $this->assertNull($statement3a->lines->firstWhere('bill_type_key', 'deep_tubewell'));
+        $this->assertEquals(100.0, (float) $statement3a->lines->firstWhere('bill_type_key', 'wasa')->amount);
+    }
+
+    #[Test]
+    public function common_water_bill_excludes_disabled_flats_from_divisor(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $wasaType = BillType::query()->where('key', 'wasa')->firstOrFail();
+        $flat3a = Flat::query()->where('name', '3A')->firstOrFail();
+
+        FlatBillTypeSetting::query()->updateOrCreate(
+            ['flat_id' => $flat3a->id, 'bill_type_id' => $wasaType->id],
+            ['enabled' => false]
+        );
+
+        CommonMeterReading::query()->create([
+            'meter_key' => 'wasa',
             'bill_month' => '2026-07-01',
             'total_amount' => 1700,
         ]);
@@ -71,7 +118,7 @@ class PhaseCAccountsTest extends TestCase
         app(MonthStatementGenerator::class)->generate('2026-07-01', 150);
 
         $enabled = Flat::query()->with('billTypeSettings.billType')->get()
-            ->filter(fn (Flat $f) => $f->isBillTypeEnabled('water'));
+            ->filter(fn (Flat $f) => $f->isBillTypeEnabled('wasa'));
         $this->assertCount(17, $enabled);
 
         $flat2a = Flat::query()->where('name', '2A')->firstOrFail();
@@ -80,33 +127,47 @@ class PhaseCAccountsTest extends TestCase
             ->whereDate('bill_month', '2026-07-01')
             ->firstOrFail();
 
-        $this->assertEquals(100.0, (float) $statement->lines->firstWhere('bill_type_key', 'water')->amount);
+        $this->assertEquals(100.0, (float) $statement->lines->firstWhere('bill_type_key', 'wasa')->amount);
 
         $statement3a = MonthlyStatement::query()
             ->where('flat_id', $flat3a->id)
             ->whereDate('bill_month', '2026-07-01')
             ->firstOrFail();
-        $this->assertNull($statement3a->lines->firstWhere('bill_type_key', 'water'));
+        $this->assertNull($statement3a->lines->firstWhere('bill_type_key', 'wasa'));
     }
 
     #[Test]
-    public function water_blocks_when_no_enabled_flats(): void
+    public function common_water_bill_blocks_when_no_enabled_flats(): void
     {
         $this->seed(DatabaseSeeder::class);
 
-        $waterType = BillType::query()->where('key', 'water')->firstOrFail();
+        $wasaType = BillType::query()->where('key', 'wasa')->firstOrFail();
         FlatBillTypeSetting::query()
-            ->where('bill_type_id', $waterType->id)
+            ->where('bill_type_id', $wasaType->id)
             ->update(['enabled' => false]);
 
         CommonMeterReading::query()->create([
-            'meter_key' => 'water',
+            'meter_key' => 'wasa',
             'bill_month' => '2026-07-01',
             'total_amount' => 1000,
         ]);
 
         $this->expectException(InvalidArgumentException::class);
         app(MonthStatementGenerator::class)->generate('2026-07-01', 150);
+    }
+
+    #[Test]
+    public function water_bills_admin_page_shows_both_types(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $user = User::query()->where('phone', '01785636359')->firstOrFail();
+
+        $this->actingAs($user)
+            ->get(route('admin.water.index', ['month' => '2026-07']))
+            ->assertOk()
+            ->assertSee('Deep tube-well')
+            ->assertSee('WASA')
+            ->assertSee('Omit flats');
     }
 
     #[Test]

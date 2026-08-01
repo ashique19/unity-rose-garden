@@ -18,7 +18,12 @@ class MonthGenerateReadiness
      * @return array{
      *     ready: bool,
      *     gas: array{required: int, entered: int, pending_flats: list<string>},
-     *     water: array{entered: bool, enabled_flats: int},
+     *     common: list<array{
+     *         key: string,
+     *         label: string,
+     *         entered: bool,
+     *         enabled_flats: int
+     *     }>,
      *     other: list<array{
      *         key: string,
      *         label: string,
@@ -63,11 +68,24 @@ class MonthGenerateReadiness
         $gasRequired = $flats->filter(fn (Flat $flat) => $flat->isBillTypeEnabled('gas'))->count();
         $gasEntered = $gasRequired - count($gasPending);
 
-        $waterEnabled = $flats->filter(fn (Flat $flat) => $flat->isBillTypeEnabled('water'))->count();
-        $waterEntered = CommonMeterReading::query()
-            ->where('meter_key', 'water')
-            ->whereDate('bill_month', $monthKey)
-            ->exists();
+        $common = [];
+        foreach (BillType::activeCommonMeters() as $commonType) {
+            $enabledFlats = $flats->filter(
+                fn (Flat $flat) => $flat->isBillTypeEnabled($commonType->key)
+            )->count();
+
+            $entered = CommonMeterReading::query()
+                ->where('meter_key', $commonType->key)
+                ->whereDate('bill_month', $monthKey)
+                ->exists();
+
+            $common[] = [
+                'key' => $commonType->key,
+                'label' => $commonType->label,
+                'entered' => $entered,
+                'enabled_flats' => $enabledFlats,
+            ];
+        }
 
         $buildingWideTypeIds = ChargeTemplate::query()
             ->where('is_building_wide', true)
@@ -89,7 +107,7 @@ class MonthGenerateReadiness
         $otherTypes = BillType::query()
             ->ordered()
             ->where('is_active', true)
-            ->whereNotIn('key', ['gas', 'water'])
+            ->otherCharges()
             ->get();
 
         $other = [];
@@ -146,10 +164,7 @@ class MonthGenerateReadiness
                 'entered' => $gasEntered,
                 'pending_flats' => $gasPending,
             ],
-            'water' => [
-                'entered' => $waterEntered,
-                'enabled_flats' => $waterEnabled,
-            ],
+            'common' => $common,
             'other' => $other,
             'pending_count' => $pendingCount,
         ];

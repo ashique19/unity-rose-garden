@@ -104,6 +104,7 @@ class PublicFlatStatementTest extends TestCase
         $flat = Flat::query()->where('name', '3A')->firstOrFail();
 
         $this->assertFalse($flat->isBillTypeEnabled('gas'));
-        $this->assertTrue($flat->isBillTypeEnabled('water'));
+        $this->assertTrue($flat->isBillTypeEnabled('wasa'));
+        $this->assertTrue($flat->isBillTypeEnabled('deep_tubewell'));
     }
 }

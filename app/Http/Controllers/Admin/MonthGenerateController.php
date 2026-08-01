@@ -64,7 +64,7 @@ class MonthGenerateController extends Controller
         return redirect()
             ->route('admin.generate.index', ['month' => $month->format('Y-m')])
             ->with('success', sprintf(
-                'Generated %d statements (%d gas, %d water, %d other lines). Collections preserved.',
+                'Generated %d statements (%d gas, %d water-bill, %d other lines). Collections preserved.',
                 $stats['statements'],
                 $stats['gas_lines'],
                 $stats['water_lines'],

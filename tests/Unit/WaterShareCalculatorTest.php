@@ -26,6 +26,6 @@ class WaterShareCalculatorTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        WaterShareCalculator::share(1000, 0);
+        WaterShareCalculator::share(1000, 0, 'WASA');
     }
 }

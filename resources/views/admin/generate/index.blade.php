@@ -31,15 +31,16 @@
 
             @php
                 $gas = $readiness['gas'];
-                $water = $readiness['water'];
+                $commonBills = $readiness['common'] ?? [];
+                $commonMissing = collect($commonBills)->where('entered', false)->pluck('label');
             @endphp
 
             @if($readiness['ready'])
                 <div class="alert alert-success mb-3">
                     All required enabled charges are entered for {{ $selectedMonth->format('F Y') }}.
-                    @unless($water['entered'])
-                        Common water is still optional and not entered yet.
-                    @endunless
+                    @if($commonMissing->isNotEmpty())
+                        Water bills still optional and not entered yet: {{ $commonMissing->implode(', ') }}.
+                    @endif
                 </div>
             @else
                 <div class="alert alert-warning mb-3">
@@ -65,20 +66,22 @@
                     @endif
                 </li>
 
-                <li class="mb-3 pb-3 border-bottom">
-                    <div class="d-flex justify-content-between gap-2">
-                        <span class="fw-semibold">
-                            <a href="{{ route('admin.water.index', ['month' => $selectedMonth->format('Y-m')]) }}">Common water</a>
-                            <span class="text-muted fw-normal">(optional)</span>
-                        </span>
-                        <span class="{{ $water['entered'] ? 'text-success' : 'text-muted' }}">
-                            {{ $water['entered'] ? 'Entered' : 'Not entered' }}
-                        </span>
-                    </div>
-                    <div class="text-muted mt-1">
-                        Would apply to {{ $water['enabled_flats'] }} water-enabled flat(s) when entered.
-                    </div>
-                </li>
+                @foreach($commonBills as $common)
+                    <li class="mb-3 pb-3 border-bottom">
+                        <div class="d-flex justify-content-between gap-2">
+                            <span class="fw-semibold">
+                                <a href="{{ route('admin.water.index', ['month' => $selectedMonth->format('Y-m')]) }}">{{ $common['label'] }}</a>
+                                <span class="text-muted fw-normal">(optional · equal split)</span>
+                            </span>
+                            <span class="{{ $common['entered'] ? 'text-success' : 'text-muted' }}">
+                                {{ $common['entered'] ? 'Entered' : 'Not entered' }}
+                            </span>
+                        </div>
+                        <div class="text-muted mt-1">
+                            Would apply to {{ $common['enabled_flats'] }} enabled flat(s) when entered.
+                        </div>
+                    </li>
+                @endforeach
 
                 @foreach($readiness['other'] as $item)
                     <li class="mb-3 pb-3 border-bottom">

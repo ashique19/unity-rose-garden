@@ -22,7 +22,7 @@ class OtherChargeController extends Controller
         $flats = Flat::query()->orderBy('name')->get();
         $billTypes = BillType::query()
             ->ordered()
-            ->whereNotIn('key', ['gas', 'water'])
+            ->otherCharges()
             ->get();
 
         $charges = CustomCharge::query()
@@ -54,8 +54,10 @@ class OtherChargeController extends Controller
         $flat = Flat::query()->findOrFail($data['flat_id']);
         $billType = BillType::query()->findOrFail($data['bill_type_id']);
 
-        if (in_array($billType->key, ['gas', 'water'], true)) {
-            return back()->withErrors(['bill_type_id' => 'Use gas readings or water entry for this type.'])->withInput();
+        if ($billType->isMeterFlat() || $billType->isCommonMeter()) {
+            return back()->withErrors([
+                'bill_type_id' => 'Use gas readings or Water bills entry for this type.',
+            ])->withInput();
         }
 
         if (! $flat->isBillTypeEnabled($billType->key)) {

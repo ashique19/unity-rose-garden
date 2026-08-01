@@ -7,14 +7,14 @@ use InvalidArgumentException;
 class WaterShareCalculator
 {
     /**
-     * Split a common water bill equally among water-enabled flats.
+     * Split a common building bill equally among participating flats.
      *
      * @throws InvalidArgumentException when no flats participate
      */
-    public static function share(float|string $total, int $enabledFlatCount): string
+    public static function share(float|string $total, int $enabledFlatCount, string $label = 'common bill'): string
     {
         if ($enabledFlatCount <= 0) {
-            throw new InvalidArgumentException('Cannot split water bill: no water-enabled flats.');
+            throw new InvalidArgumentException("Cannot split {$label}: no enabled flats.");
         }
 
         $share = (float) $total / $enabledFlatCount;

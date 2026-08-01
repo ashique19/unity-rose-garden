@@ -10,11 +10,12 @@ class BillTypeSeeder extends Seeder
     public function run(): void
     {
         $types = [
-            ['key' => 'gas', 'label' => 'Gas', 'nature' => 'meter_flat', 'sort_order' => 1],
-            ['key' => 'water', 'label' => 'Water', 'nature' => 'meter_common', 'sort_order' => 2],
-            ['key' => 'cleaner', 'label' => 'Cleaner', 'nature' => 'other', 'sort_order' => 3],
-            ['key' => 'common_electricity', 'label' => 'Common electricity', 'nature' => 'other', 'sort_order' => 4],
-            ['key' => 'garbage', 'label' => 'Garbage', 'nature' => 'other', 'sort_order' => 5],
+            ['key' => 'gas', 'label' => 'Gas', 'nature' => BillType::NATURE_METER_FLAT, 'sort_order' => 1],
+            ['key' => 'deep_tubewell', 'label' => 'Deep tube-well', 'nature' => BillType::NATURE_METER_COMMON, 'sort_order' => 2],
+            ['key' => 'wasa', 'label' => 'WASA', 'nature' => BillType::NATURE_METER_COMMON, 'sort_order' => 3],
+            ['key' => 'cleaner', 'label' => 'Cleaner', 'nature' => BillType::NATURE_OTHER, 'sort_order' => 4],
+            ['key' => 'common_electricity', 'label' => 'Common electricity', 'nature' => BillType::NATURE_OTHER, 'sort_order' => 5],
+            ['key' => 'garbage', 'label' => 'Garbage', 'nature' => BillType::NATURE_OTHER, 'sort_order' => 6],
         ];
 
         foreach ($types as $type) {
@@ -23,5 +24,8 @@ class BillTypeSeeder extends Seeder
                 $type + ['is_active' => true]
             );
         }
+
+        // Remove legacy single water type if still present after dual split.
+        BillType::query()->where('key', 'water')->delete();
     }
 }

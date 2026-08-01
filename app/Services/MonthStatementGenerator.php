@@ -12,6 +12,7 @@ use App\Models\MonthlyStatement;
 use App\Models\StatementLine;
 use App\Support\WaterShareCalculator;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -32,28 +33,52 @@ class MonthStatementGenerator
         $m3ToKg = (float) env('M3_TO_KG_CONVERSION_RATE', 2.08);
 
         $gasType = BillType::query()->where('key', 'gas')->first();
-        $waterType = BillType::query()->where('key', 'water')->first();
         $billTypes = BillType::query()->ordered()->get()->keyBy('key');
+        $commonMeterTypes = BillType::activeCommonMeters();
+        $commonMeterKeys = $commonMeterTypes->pluck('key')->all();
         $buildingWideTemplates = ChargeTemplate::query()
             ->where('is_building_wide', true)
             ->with('billType')
             ->get();
 
-        $waterReading = CommonMeterReading::query()
-            ->where('meter_key', 'water')
-            ->whereDate('bill_month', $monthKey)
-            ->first();
-
         $flats = Flat::query()->with('billTypeSettings.billType')->orderBy('id')->get();
-        $waterEnabledFlats = $flats->filter(fn (Flat $flat) => $flat->isBillTypeEnabled('water'));
-        $waterEnabledCount = $waterEnabledFlats->count();
 
-        $waterShare = null;
-        if ($waterReading) {
-            if ($waterEnabledCount === 0) {
-                throw new InvalidArgumentException('Cannot generate water lines: no water-enabled flats.');
+        $commonPlans = [];
+        foreach ($commonMeterTypes as $commonType) {
+            $reading = CommonMeterReading::query()
+                ->where('meter_key', $commonType->key)
+                ->whereDate('bill_month', $monthKey)
+                ->first();
+
+            if (! $reading) {
+                $commonPlans[$commonType->key] = [
+                    'type' => $commonType,
+                    'reading' => null,
+                    'share' => null,
+                ];
+
+                continue;
             }
-            $waterShare = WaterShareCalculator::share($waterReading->total_amount, $waterEnabledCount);
+
+            $enabledCount = $flats->filter(
+                fn (Flat $flat) => $flat->isBillTypeEnabled($commonType->key)
+            )->count();
+
+            if ($enabledCount === 0) {
+                throw new InvalidArgumentException(
+                    "Cannot generate {$commonType->label} lines: no enabled flats."
+                );
+            }
+
+            $commonPlans[$commonType->key] = [
+                'type' => $commonType,
+                'reading' => $reading,
+                'share' => WaterShareCalculator::share(
+                    $reading->total_amount,
+                    $enabledCount,
+                    $commonType->label
+                ),
+            ];
         }
 
         $stats = [
@@ -70,12 +95,11 @@ class MonthStatementGenerator
             $pricePerKg,
             $m3ToKg,
             $gasType,
-            $waterType,
             $billTypes,
             $buildingWideTemplates,
             $flats,
-            $waterReading,
-            $waterShare,
+            $commonPlans,
+            $commonMeterKeys,
             &$stats
         ) {
             foreach ($flats as $flat) {
@@ -146,43 +170,61 @@ class MonthStatementGenerator
                         ->delete();
                 }
 
-                // --- Water line ---
-                if ($waterType && $waterReading && $waterShare !== null && $flat->isBillTypeEnabled('water')) {
-                    StatementLine::query()->updateOrCreate(
-                        [
-                            'monthly_statement_id' => $statement->id,
-                            'bill_type_key' => 'water',
-                        ],
-                        [
-                            'bill_type_id' => $waterType->id,
-                            'label' => 'Common water – '.$monthLabel,
-                            'quantity' => 1,
-                            'rate' => $waterShare,
-                            'amount' => $waterShare,
-                            'note' => $waterReading->note,
-                            'enabled' => true,
-                            'meta' => [
-                                'common_total' => (float) $waterReading->total_amount,
-                                'share' => $waterShare,
-                                'source' => 'common_meter',
+                // --- Common meter bills (deep tube-well, WASA, …) ---
+                foreach ($commonPlans as $typeKey => $plan) {
+                    /** @var BillType $commonType */
+                    $commonType = $plan['type'];
+                    $commonReading = $plan['reading'];
+                    $share = $plan['share'];
+
+                    if ($commonReading && $share !== null && $flat->isBillTypeEnabled($typeKey)) {
+                        StatementLine::query()->updateOrCreate(
+                            [
+                                'monthly_statement_id' => $statement->id,
+                                'bill_type_key' => $typeKey,
                             ],
-                        ]
-                    );
-                    $stats['water_lines']++;
-                } else {
+                            [
+                                'bill_type_id' => $commonType->id,
+                                'label' => $commonType->label.' – '.$monthLabel,
+                                'quantity' => 1,
+                                'rate' => $share,
+                                'amount' => $share,
+                                'note' => $commonReading->note,
+                                'enabled' => true,
+                                'meta' => [
+                                    'common_total' => (float) $commonReading->total_amount,
+                                    'share' => $share,
+                                    'source' => 'common_meter',
+                                    'meter_key' => $typeKey,
+                                ],
+                            ]
+                        );
+                        $stats['water_lines']++;
+                    } else {
+                        StatementLine::query()
+                            ->where('monthly_statement_id', $statement->id)
+                            ->where('bill_type_key', $typeKey)
+                            ->delete();
+                    }
+                }
+
+                // Drop legacy single water lines if any remain.
+                if (! in_array('water', $commonMeterKeys, true)) {
                     StatementLine::query()
                         ->where('monthly_statement_id', $statement->id)
                         ->where('bill_type_key', 'water')
                         ->delete();
                 }
 
-                // --- Other lines (not gas, not water) ---
+                // --- Other lines (not gas, not common meters) ---
+                $reservedKeys = array_values(array_unique(array_merge(['gas'], $commonMeterKeys, ['water'])));
+
                 StatementLine::query()
                     ->where('monthly_statement_id', $statement->id)
-                    ->whereNotIn('bill_type_key', ['gas', 'water'])
+                    ->whereNotIn('bill_type_key', $reservedKeys)
                     ->delete();
 
-                $charges = $this->resolveOtherCharges($flat, $monthKey, $buildingWideTemplates);
+                $charges = $this->resolveOtherCharges($flat, $monthKey, $buildingWideTemplates, $reservedKeys);
 
                 foreach ($charges as $charge) {
                     $typeKey = $charge['bill_type_key'];
@@ -215,10 +257,11 @@ class MonthStatementGenerator
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int, ChargeTemplate>  $buildingWideTemplates
+     * @param  Collection<int, ChargeTemplate>  $buildingWideTemplates
+     * @param  list<string>  $reservedKeys
      * @return list<array{bill_type_key: string, label: string, amount: float, notes: ?string, source: string}>
      */
-    private function resolveOtherCharges(Flat $flat, string $monthKey, $buildingWideTemplates): array
+    private function resolveOtherCharges(Flat $flat, string $monthKey, $buildingWideTemplates, array $reservedKeys): array
     {
         $charges = [];
         $coveredTypeIds = [];
@@ -231,7 +274,7 @@ class MonthStatementGenerator
 
         foreach ($customCharges as $custom) {
             $typeKey = $custom->billType?->key ?? 'other';
-            if (in_array($typeKey, ['gas', 'water'], true)) {
+            if (in_array($typeKey, $reservedKeys, true)) {
                 continue;
             }
 
@@ -250,7 +293,7 @@ class MonthStatementGenerator
 
         foreach ($buildingWideTemplates as $template) {
             $typeKey = $template->billType?->key;
-            if (! $typeKey || in_array($typeKey, ['gas', 'water'], true)) {
+            if (! $typeKey || in_array($typeKey, $reservedKeys, true)) {
                 continue;
             }
             if ($template->bill_type_id && in_array($template->bill_type_id, $coveredTypeIds, true)) {

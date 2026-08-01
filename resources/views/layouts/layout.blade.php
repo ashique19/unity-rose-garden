@@ -57,7 +57,7 @@
               <div class="mobile-menu-label">Billing</div>
               <a href="{{ route('admin.generate.index') }}">Generate month</a>
               <a href="{{ route('admin.gas-readings.index') }}">Gas readings</a>
-              <a href="{{ route('admin.water.index') }}">Water</a>
+              <a href="{{ route('admin.water.index') }}">Water bills</a>
               <a href="{{ route('admin.other-charges.index') }}">Other charges</a>
               <a href="{{ route('admin.flat-bill-type-settings.index') }}">Bill type settings</a>
               <a href="{{ route('charge-templates.index') }}">Charge templates</a>
@@ -107,7 +107,7 @@
               <ul class="nav-submenu" role="list">
                 <li><a href="{{ route('admin.generate.index') }}">Generate month</a></li>
                 <li><a href="{{ route('admin.gas-readings.index') }}">Gas readings</a></li>
-                <li><a href="{{ route('admin.water.index') }}">Water</a></li>
+                <li><a href="{{ route('admin.water.index') }}">Water bills</a></li>
                 <li><a href="{{ route('admin.other-charges.index') }}">Other charges</a></li>
                 <li><a href="{{ route('admin.flat-bill-type-settings.index') }}">Bill type settings</a></li>
                 <li><a href="{{ route('charge-templates.index') }}">Charge templates</a></li>
