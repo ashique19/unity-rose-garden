@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AccountLedgerEntry;
+use App\Models\Attachment;
 use App\Models\ExpenseHead;
 use App\Models\Flat;
 use Illuminate\Http\RedirectResponse;
@@ -23,6 +24,20 @@ class LedgerController extends Controller
             ->paginate(30)
             ->withQueryString();
 
+        $attachmentIds = $entries->getCollection()
+            ->flatMap(fn (AccountLedgerEntry $entry) => $entry->mediaAttachmentIds())
+            ->unique()
+            ->values();
+
+        $attachmentsById = $attachmentIds->isEmpty()
+            ? collect()
+            : Attachment::query()->whereIn('id', $attachmentIds)->get()->keyBy('id');
+
+        $recentAttachments = Attachment::query()
+            ->orderByDesc('created_at')
+            ->limit(24)
+            ->get();
+
         $flats = Flat::query()->orderBy('name')->get();
 
         return view('admin.ledger.index', [
@@ -30,6 +45,8 @@ class LedgerController extends Controller
             'flats' => $flats,
             'expenseHeads' => ExpenseHead::query()->active()->ordered()->get(),
             'filterType' => $request->query('type'),
+            'recentAttachments' => $recentAttachments,
+            'attachmentsById' => $attachmentsById,
         ]);
     }
 
@@ -44,6 +61,9 @@ class LedgerController extends Controller
             'payee' => ['nullable', 'string', 'max:120'],
             'category' => ['nullable', 'string', 'max:100'],
             'note' => ['nullable', 'string', 'max:255'],
+            'attachment_ids' => ['nullable', 'array'],
+            'attachment_ids.*' => ['integer', 'exists:attachments,id'],
+            'media_urls' => ['nullable', 'string', 'max:4000'],
         ]);
 
         $head = null;
@@ -62,6 +82,17 @@ class LedgerController extends Controller
             $data['category'] = $head->label;
         }
 
+        $media = $this->buildMediaPayload(
+            $data['attachment_ids'] ?? [],
+            $data['media_urls'] ?? null
+        );
+
+        if ($media === null) {
+            return back()->withErrors([
+                'media_urls' => 'One or more media URLs are invalid. Use full http(s) links, one per line.',
+            ])->withInput();
+        }
+
         AccountLedgerEntry::query()->create([
             'type' => $data['type'],
             'amount' => $data['amount'],
@@ -72,6 +103,7 @@ class LedgerController extends Controller
             'payee' => $data['payee'] ?? null,
             'category' => $data['category'] ?? null,
             'note' => $data['note'] ?? null,
+            'media' => $media ?: null,
         ]);
 
         \App\Support\Auditor::log('ledger.'.$data['type'], null, [
@@ -79,6 +111,7 @@ class LedgerController extends Controller
             'flat_id' => $data['flat_id'] ?? null,
             'expense_head_id' => $head?->id,
             'category' => $data['category'] ?? null,
+            'media_count' => count($media),
         ]);
 
         return redirect()
@@ -99,5 +132,35 @@ class LedgerController extends Controller
         return redirect()
             ->route('admin.ledger.index')
             ->with('success', 'Ledger entry removed.');
+    }
+
+    /**
+     * @param  list<int|string>  $attachmentIds
+     * @return list<array{attachment_id?: int, url?: string}>|null  null when URL validation fails
+     */
+    private function buildMediaPayload(array $attachmentIds, ?string $mediaUrlsText): ?array
+    {
+        $media = [];
+
+        foreach ($attachmentIds as $id) {
+            $media[] = ['attachment_id' => (int) $id];
+        }
+
+        $raw = trim((string) $mediaUrlsText);
+        if ($raw !== '') {
+            $parts = preg_split('/[\r\n,]+/', $raw) ?: [];
+            foreach ($parts as $part) {
+                $url = trim($part);
+                if ($url === '') {
+                    continue;
+                }
+                if (! filter_var($url, FILTER_VALIDATE_URL) || ! preg_match('#^https?://#i', $url)) {
+                    return null;
+                }
+                $media[] = ['url' => $url];
+            }
+        }
+
+        return $media;
     }
 }

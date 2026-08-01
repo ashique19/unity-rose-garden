@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Collection;
 
 class AccountLedgerEntry extends Model
 {
@@ -22,6 +23,7 @@ class AccountLedgerEntry extends Model
         'expense_head_id',
         'payee',
         'note',
+        'media',
     ];
 
     protected function casts(): array
@@ -29,6 +31,7 @@ class AccountLedgerEntry extends Model
         return [
             'amount' => 'decimal:2',
             'entry_date' => 'date',
+            'media' => 'array',
         ];
     }
 
@@ -60,5 +63,57 @@ class AccountLedgerEntry extends Model
     public function isCashOut(): bool
     {
         return $this->type === self::TYPE_CASH_OUT;
+    }
+
+    /**
+     * Attachment ids referenced by this entry's media JSON.
+     *
+     * @return list<int>
+     */
+    public function mediaAttachmentIds(): array
+    {
+        return collect($this->media ?? [])
+            ->pluck('attachment_id')
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  Collection<int, Attachment>|null  $attachmentsById
+     * @return list<array{title: string, url: string, source: string}>
+     */
+    public function resolvedMedia(?Collection $attachmentsById = null): array
+    {
+        $items = [];
+
+        foreach ($this->media ?? [] as $item) {
+            if (! empty($item['attachment_id'])) {
+                $attachment = $attachmentsById?->get((int) $item['attachment_id'])
+                    ?? Attachment::query()->find($item['attachment_id']);
+
+                if ($attachment) {
+                    $items[] = [
+                        'title' => $attachment->title,
+                        'url' => $attachment->url(),
+                        'source' => 'gallery',
+                    ];
+                }
+
+                continue;
+            }
+
+            if (! empty($item['url']) && is_string($item['url'])) {
+                $items[] = [
+                    'title' => 'Link',
+                    'url' => $item['url'],
+                    'source' => 'url',
+                ];
+            }
+        }
+
+        return $items;
     }
 }
