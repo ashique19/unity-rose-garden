@@ -24,59 +24,63 @@
             </div>
         @endif
 
-        <div class="bg-white border rounded-3 shadow-sm p-4 mb-4">
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
-                <h2 class="h5 fw-bold mb-0">Add collection</h2>
-                <div class="d-flex flex-wrap gap-3 small" id="collection-balance-preview"
-                     data-balance="{{ number_format($availableBalance, 2, '.', '') }}">
-                    <div>
-                        <span class="text-muted">Available before</span>
-                        <div class="fw-semibold">৳<span id="collection-balance-before">{{ number_format($availableBalance, 2) }}</span></div>
+        <x-mobile-panel-toggles :add-open="$errors->any()">
+            <x-slot:add>
+                <div class="bg-white border rounded-3 shadow-sm p-4 mb-4">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
+                        <h2 class="h5 fw-bold mb-0">Add collection</h2>
+                        <div class="d-flex flex-wrap gap-3 small" id="collection-balance-preview"
+                             data-balance="{{ number_format($availableBalance, 2, '.', '') }}">
+                            <div>
+                                <span class="text-muted">Available before</span>
+                                <div class="fw-semibold">৳<span id="collection-balance-before">{{ number_format($availableBalance, 2) }}</span></div>
+                            </div>
+                            <div>
+                                <span class="text-muted">After this collection</span>
+                                <div class="fw-semibold">৳<span id="collection-balance-after">{{ number_format($availableBalance, 2) }}</span></div>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <span class="text-muted">After this collection</span>
-                        <div class="fw-semibold">৳<span id="collection-balance-after">{{ number_format($availableBalance, 2) }}</span></div>
-                    </div>
+                    <form method="post" action="{{ route('admin.collections.store') }}" class="row g-3" id="collection-create-form">
+                        @csrf
+                        <div class="col-md-4">
+                            <label class="form-label" for="collection-statement">Statement (flat)</label>
+                            <select name="monthly_statement_id" id="collection-statement" class="form-select" required @disabled($statements->isEmpty())>
+                                <option value="" data-pending="">{{ $statements->isEmpty() ? 'No statements this month — generate first' : 'Select flat…' }}</option>
+                                @foreach($statements as $statement)
+                                    @php $pending = (float) $statement->pendingAmount(); @endphp
+                                    <option value="{{ $statement->id }}" data-pending="{{ number_format($pending, 2, '.', '') }}">
+                                        {{ $statement->flat?->name ?? 'Flat #'.$statement->flat_id }}
+                                        — pending ৳{{ number_format($pending, 2) }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label" for="collection-amount">Amount (৳)</label>
+                            <input type="number" step="0.01" min="0.01" name="amount" id="collection-amount" class="form-control" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Collected on</label>
+                            <input type="date" name="collected_on" class="form-control" value="{{ now()->toDateString() }}" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Note</label>
+                            <input type="text" name="note" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" name="post_to_ledger" value="1" id="post_to_ledger" checked>
+                                <label class="form-check-label" for="post_to_ledger">Also post cash-in to ledger</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <button class="btn btn-primary">Record collection</button>
+                        </div>
+                    </form>
                 </div>
-            </div>
-            <form method="post" action="{{ route('admin.collections.store') }}" class="row g-3" id="collection-create-form">
-                @csrf
-                <div class="col-md-4">
-                    <label class="form-label" for="collection-statement">Statement (flat)</label>
-                    <select name="monthly_statement_id" id="collection-statement" class="form-select" required @disabled($statements->isEmpty())>
-                        <option value="" data-pending="">{{ $statements->isEmpty() ? 'No statements this month — generate first' : 'Select flat…' }}</option>
-                        @foreach($statements as $statement)
-                            @php $pending = (float) $statement->pendingAmount(); @endphp
-                            <option value="{{ $statement->id }}" data-pending="{{ number_format($pending, 2, '.', '') }}">
-                                {{ $statement->flat?->name ?? 'Flat #'.$statement->flat_id }}
-                                — pending ৳{{ number_format($pending, 2) }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label" for="collection-amount">Amount (৳)</label>
-                    <input type="number" step="0.01" min="0.01" name="amount" id="collection-amount" class="form-control" required>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Collected on</label>
-                    <input type="date" name="collected_on" class="form-control" value="{{ now()->toDateString() }}" required>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Note</label>
-                    <input type="text" name="note" class="form-control">
-                </div>
-                <div class="col-md-6">
-                    <div class="form-check mt-2">
-                        <input class="form-check-input" type="checkbox" name="post_to_ledger" value="1" id="post_to_ledger" checked>
-                        <label class="form-check-label" for="post_to_ledger">Also post cash-in to ledger</label>
-                    </div>
-                </div>
-                <div class="col-md-6 text-md-end">
-                    <button class="btn btn-primary">Record collection</button>
-                </div>
-            </form>
-        </div>
+            </x-slot:add>
+        </x-mobile-panel-toggles>
 
         <div class="table-responsive bg-white border rounded-3 shadow-sm">
             <table class="table mb-0 align-middle">

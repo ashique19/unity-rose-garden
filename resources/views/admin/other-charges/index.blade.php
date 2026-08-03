@@ -28,48 +28,52 @@
             </div>
         @endif
 
-        <div class="bg-white border rounded-3 shadow-sm p-4 mb-4">
-            <h2 class="h5 fw-bold mb-3">Add charge</h2>
-            <form method="post" action="{{ route('admin.other-charges.store') }}" class="row g-3">
-                @csrf
-                <input type="hidden" name="charge_month" value="{{ $selectedMonth->format('Y-m') }}">
-                <div class="col-md-3">
-                    <label class="form-label">Flat</label>
-                    <select name="flat_id" class="form-select" required>
-                        <option value="">Select…</option>
-                        @foreach($flats as $flat)
-                            <option value="{{ $flat->id }}" @selected(old('flat_id') == $flat->id)>{{ $flat->name }}</option>
-                        @endforeach
-                    </select>
+        <x-mobile-panel-toggles :add-open="$errors->any()">
+            <x-slot:add>
+                <div class="bg-white border rounded-3 shadow-sm p-4 mb-4">
+                    <h2 class="h5 fw-bold mb-3">Add charge</h2>
+                    <form method="post" action="{{ route('admin.other-charges.store') }}" class="row g-3">
+                        @csrf
+                        <input type="hidden" name="charge_month" value="{{ $selectedMonth->format('Y-m') }}">
+                        <div class="col-md-3">
+                            <label class="form-label">Flat</label>
+                            <select name="flat_id" class="form-select" required>
+                                <option value="">Select…</option>
+                                @foreach($flats as $flat)
+                                    <option value="{{ $flat->id }}" @selected(old('flat_id') == $flat->id)>{{ $flat->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Bill type</label>
+                            <select name="bill_type_id" id="bill_type_id" class="form-select" required>
+                                <option value="">Select…</option>
+                                @foreach($billTypes as $type)
+                                    <option value="{{ $type->id }}" data-label="{{ $type->label }}" @selected(old('bill_type_id') == $type->id)>
+                                        {{ $type->label }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Label</label>
+                            <input type="text" name="label" id="charge_label" class="form-control" value="{{ old('label') }}" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Amount (৳)</label>
+                            <input type="number" step="0.01" min="0" name="amount" class="form-control" value="{{ old('amount') }}" required>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">Notes</label>
+                            <input type="text" name="notes" class="form-control" value="{{ old('notes') }}">
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn btn-primary w-100">Add</button>
+                        </div>
+                    </form>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">Bill type</label>
-                    <select name="bill_type_id" id="bill_type_id" class="form-select" required>
-                        <option value="">Select…</option>
-                        @foreach($billTypes as $type)
-                            <option value="{{ $type->id }}" data-label="{{ $type->label }}" @selected(old('bill_type_id') == $type->id)>
-                                {{ $type->label }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Label</label>
-                    <input type="text" name="label" id="charge_label" class="form-control" value="{{ old('label') }}" required>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Amount (৳)</label>
-                    <input type="number" step="0.01" min="0" name="amount" class="form-control" value="{{ old('amount') }}" required>
-                </div>
-                <div class="col-md-8">
-                    <label class="form-label">Notes</label>
-                    <input type="text" name="notes" class="form-control" value="{{ old('notes') }}">
-                </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <button class="btn btn-primary w-100">Add</button>
-                </div>
-            </form>
-        </div>
+            </x-slot:add>
+        </x-mobile-panel-toggles>
 
         <div class="table-responsive bg-white border rounded-3 shadow-sm">
             <table class="table mb-0 align-middle">

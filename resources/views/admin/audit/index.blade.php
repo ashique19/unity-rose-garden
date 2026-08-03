@@ -8,27 +8,31 @@
             <p class="text-muted mb-0">Recent admin actions.</p>
         </div>
 
-        <form method="get" class="row g-2 align-items-end bg-white border rounded-3 shadow-sm p-3 mb-4">
-            <div class="col-md-4">
-                <label class="form-label" for="audit-q">Search</label>
-                <input type="search" name="q" id="audit-q" class="form-control" value="{{ $q }}"
-                       placeholder="Action, user, subject, meta, IP…">
-            </div>
-            <div class="col-md-2">
-                <label class="form-label" for="audit-from">From</label>
-                <input type="date" name="from" id="audit-from" class="form-control" value="{{ $from }}">
-            </div>
-            <div class="col-md-2">
-                <label class="form-label" for="audit-to">To</label>
-                <input type="date" name="to" id="audit-to" class="form-control" value="{{ $to }}">
-            </div>
-            <div class="col-md-4 d-flex gap-2">
-                <button class="btn btn-outline-primary">Search</button>
-                @if($q !== '' || $from || $to)
-                    <a href="{{ route('admin.audit.index') }}" class="btn btn-outline-secondary">Clear</a>
-                @endif
-            </div>
-        </form>
+        <x-mobile-panel-toggles :search-open="$q !== '' || filled($from) || filled($to)">
+            <x-slot:search>
+                <form method="get" class="row g-2 align-items-end bg-white border rounded-3 shadow-sm p-3 mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label" for="audit-q">Search</label>
+                        <input type="search" name="q" id="audit-q" class="form-control" value="{{ $q }}"
+                               placeholder="Action, user, subject, meta, IP…">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label" for="audit-from">From</label>
+                        <input type="date" name="from" id="audit-from" class="form-control" value="{{ $from }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label" for="audit-to">To</label>
+                        <input type="date" name="to" id="audit-to" class="form-control" value="{{ $to }}">
+                    </div>
+                    <div class="col-md-4 d-flex gap-2">
+                        <button class="btn btn-outline-primary">Search</button>
+                        @if($q !== '' || $from || $to)
+                            <a href="{{ route('admin.audit.index') }}" class="btn btn-outline-secondary">Clear</a>
+                        @endif
+                    </div>
+                </form>
+            </x-slot:search>
+        </x-mobile-panel-toggles>
 
         @if($q !== '' || $from || $to)
             <p class="text-muted small mb-3">

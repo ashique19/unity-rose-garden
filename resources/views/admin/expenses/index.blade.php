@@ -24,31 +24,35 @@
             </div>
         @endif
 
-        <form method="get" class="row g-2 align-items-end bg-white border rounded-3 shadow-sm p-3 mb-4">
-            <div class="col-md-3">
-                <label class="form-label">From</label>
-                <input type="date" name="from" class="form-control" value="{{ $from }}">
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">To</label>
-                <input type="date" name="to" class="form-control" value="{{ $to }}">
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Head</label>
-                <select name="head" class="form-select">
-                    <option value="">All heads</option>
-                    @foreach($heads as $head)
-                        <option value="{{ $head->id }}" @selected((string) $selectedHeadId === (string) $head->id)>
-                            {{ $head->label }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="col-md-3">
-                <button class="btn btn-outline-primary w-100">Filter</button>
-            </div>
-        </form>
+        <x-mobile-panel-toggles :search-open="filled($from) || filled($to) || filled($selectedHeadId)" :add-open="$errors->any()">
+            <x-slot:search>
+                <form method="get" class="row g-2 align-items-end bg-white border rounded-3 shadow-sm p-3 mb-4">
+                    <div class="col-md-3">
+                        <label class="form-label">From</label>
+                        <input type="date" name="from" class="form-control" value="{{ $from }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">To</label>
+                        <input type="date" name="to" class="form-control" value="{{ $to }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Head</label>
+                        <select name="head" class="form-select">
+                            <option value="">All heads</option>
+                            @foreach($heads as $head)
+                                <option value="{{ $head->id }}" @selected((string) $selectedHeadId === (string) $head->id)>
+                                    {{ $head->label }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-primary w-100">Filter</button>
+                    </div>
+                </form>
+            </x-slot:search>
 
+            <x-slot:add>
         <div class="bg-white border rounded-3 shadow-sm p-4 mb-4">
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
                 <h2 class="h5 fw-bold mb-0">Add expense</h2>
@@ -168,6 +172,8 @@
                 </div>
             </form>
         </div>
+            </x-slot:add>
+        </x-mobile-panel-toggles>
 
         <div class="d-flex justify-content-between align-items-center mb-2">
             <div class="text-muted small">Showing filtered expenses</div>

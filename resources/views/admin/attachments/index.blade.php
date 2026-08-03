@@ -29,42 +29,60 @@
             </div>
         @endif
 
-        <div class="bg-white border rounded-3 shadow-sm p-4 mb-4">
-            <h2 class="h6 fw-bold mb-3">Upload bill photo</h2>
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label">Title</label>
-                    <input type="text" class="form-control" x-model="title" placeholder="e.g. WASA July 2026">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Billing month</label>
-                    <input type="month" class="form-control" x-model="billMonth">
-                </div>
-                <div class="col-md-5">
-                    <label class="form-label">Note</label>
-                    <input type="text" class="form-control" x-model="note" placeholder="Optional">
-                </div>
-                <div class="col-12">
-                    <label class="form-label">Photo</label>
-                    <input type="file" class="form-control" accept="image/*" @change="onFileSelected($event)" :disabled="uploading">
-                    <div class="form-text">
-                        Browser resize to max 1200×1200 + JPEG compress, then server confirms size.
+        <div class="mobile-panel-group">
+            <div class="mobile-panel-toolbar d-md-none mb-3" role="toolbar" aria-label="Add">
+                <button
+                    type="button"
+                    class="mobile-panel-toggle"
+                    @click="addOpen = !addOpen"
+                    :class="{ 'is-active': addOpen }"
+                    :aria-expanded="addOpen.toString()"
+                    aria-controls="mobile-panel-add"
+                    aria-label="Toggle upload form"
+                    title="Add"
+                >
+                    <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                </button>
+            </div>
+            <div id="mobile-panel-add" class="mobile-panel mobile-panel-add" :class="{ 'is-open': addOpen }">
+                <div class="bg-white border rounded-3 shadow-sm p-4 mb-4">
+                    <h2 class="h6 fw-bold mb-3">Upload bill photo</h2>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Title</label>
+                            <input type="text" class="form-control" x-model="title" placeholder="e.g. WASA July 2026">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Billing month</label>
+                            <input type="month" class="form-control" x-model="billMonth">
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label">Note</label>
+                            <input type="text" class="form-control" x-model="note" placeholder="Optional">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Photo</label>
+                            <input type="file" class="form-control" accept="image/*" @change="onFileSelected($event)" :disabled="uploading">
+                            <div class="form-text">
+                                Browser resize to max 1200×1200 + JPEG compress, then server confirms size.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-wrap align-items-center gap-3 mt-3" x-show="previewUrl || uploading || status">
+                        <template x-if="previewUrl">
+                            <img :src="previewUrl" alt="Preview" class="rounded border" style="max-width: 160px; max-height: 160px; object-fit: contain;">
+                        </template>
+                        <div class="small">
+                            <div x-show="status" x-text="status" class="text-muted"></div>
+                            <div x-show="error" class="text-danger" x-text="error"></div>
+                        </div>
+                        <button type="button" class="btn btn-primary" @click="upload" :disabled="!fileBlob || uploading">
+                            <span x-show="!uploading">Upload</span>
+                            <span x-show="uploading">Uploading…</span>
+                        </button>
                     </div>
                 </div>
-            </div>
-
-            <div class="d-flex flex-wrap align-items-center gap-3 mt-3" x-show="previewUrl || uploading || status">
-                <template x-if="previewUrl">
-                    <img :src="previewUrl" alt="Preview" class="rounded border" style="max-width: 160px; max-height: 160px; object-fit: contain;">
-                </template>
-                <div class="small">
-                    <div x-show="status" x-text="status" class="text-muted"></div>
-                    <div x-show="error" class="text-danger" x-text="error"></div>
-                </div>
-                <button type="button" class="btn btn-primary" @click="upload" :disabled="!fileBlob || uploading">
-                    <span x-show="!uploading">Upload</span>
-                    <span x-show="uploading">Uploading…</span>
-                </button>
             </div>
         </div>
 
@@ -138,6 +156,7 @@
 <script>
 function attachmentGallery() {
     return {
+        addOpen: @json($errors->any()),
         title: '',
         note: '',
         billMonth: @json($selectedMonth?->format('Y-m') ?? now()->format('Y-m')),

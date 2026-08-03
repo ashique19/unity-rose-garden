@@ -15,27 +15,31 @@
             </div>
         @endif
 
-        <div class="bg-white border rounded-3 shadow-sm p-4 mb-4">
-            <h2 class="h5 fw-bold mb-3">Add head</h2>
-            <form method="post" action="{{ route('admin.expense-heads.store') }}" class="row g-3">
-                @csrf
-                <div class="col-md-5">
-                    <label class="form-label">Label</label>
-                    <input type="text" name="label" class="form-control" value="{{ old('label') }}" required maxlength="120">
+        <x-mobile-panel-toggles :add-open="$errors->any()">
+            <x-slot:add>
+                <div class="bg-white border rounded-3 shadow-sm p-4 mb-4">
+                    <h2 class="h5 fw-bold mb-3">Add head</h2>
+                    <form method="post" action="{{ route('admin.expense-heads.store') }}" class="row g-3">
+                        @csrf
+                        <div class="col-md-5">
+                            <label class="form-label">Label</label>
+                            <input type="text" name="label" class="form-control" value="{{ old('label') }}" required maxlength="120">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Key (optional)</label>
+                            <input type="text" name="key" class="form-control" value="{{ old('key') }}" maxlength="80" placeholder="auto from label">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Sort</label>
+                            <input type="number" name="sort_order" class="form-control" value="{{ old('sort_order') }}" min="0">
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn btn-primary w-100">Add</button>
+                        </div>
+                    </form>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">Key (optional)</label>
-                    <input type="text" name="key" class="form-control" value="{{ old('key') }}" maxlength="80" placeholder="auto from label">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Sort</label>
-                    <input type="number" name="sort_order" class="form-control" value="{{ old('sort_order') }}" min="0">
-                </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <button class="btn btn-primary w-100">Add</button>
-                </div>
-            </form>
-        </div>
+            </x-slot:add>
+        </x-mobile-panel-toggles>
 
         <div class="table-responsive bg-white border rounded-3 shadow-sm">
             <table class="table mb-0 align-middle">

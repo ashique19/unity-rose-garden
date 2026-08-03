@@ -41,56 +41,61 @@
         @endif
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-            
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                    <i class="fa-solid fa-circle-plus text-emerald-500 me-2"></i> Create New Cost Heading
-                </h3>
-                
-                <form action="{{ route('charge-templates.store') }}" method="POST" class="space-y-4">
-                    @csrf
-                    
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1" for="bill_type_id">Bill type</label>
-                        <select id="bill_type_id" name="bill_type_id" class="form-select text-sm">
-                            <option value="">Select bill type…</option>
-                            @foreach($billTypes as $type)
-                                <option value="{{ $type->id }}" @selected(old('bill_type_id') == $type->id)>{{ $type->label }}</option>
-                            @endforeach
-                        </select>
-                        <span class="text-[10px] text-gray-400 block mt-1">Required when applying building-wide (otherwise the charge is skipped on generate).</span>
-                    </div>
+            <div>
+                <x-mobile-panel-toggles :add-open="$errors->any()">
+                    <x-slot:add>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                                <i class="fa-solid fa-circle-plus text-emerald-500 me-2"></i> Create New Cost Heading
+                            </h3>
+                            
+                            <form action="{{ route('charge-templates.store') }}" method="POST" class="space-y-4">
+                                @csrf
+                                
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1" for="bill_type_id">Bill type</label>
+                                    <select id="bill_type_id" name="bill_type_id" class="form-select text-sm">
+                                        <option value="">Select bill type…</option>
+                                        @foreach($billTypes as $type)
+                                            <option value="{{ $type->id }}" @selected(old('bill_type_id') == $type->id)>{{ $type->label }}</option>
+                                        @endforeach
+                                    </select>
+                                    <span class="text-[10px] text-gray-400 block mt-1">Required when applying building-wide (otherwise the charge is skipped on generate).</span>
+                                </div>
 
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1" for="charge_key">Charge Key / Slug</label>
-                        <input type="text" id="charge_key" name="charge_key" class="form-control text-sm" placeholder="e.g. service_charge" required value="{{ old('charge_key') }}">
-                        <span class="text-[10px] text-gray-400 block mt-1">Unique system identifier. No spaces (use underscores).</span>
-                    </div>
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1" for="charge_key">Charge Key / Slug</label>
+                                    <input type="text" id="charge_key" name="charge_key" class="form-control text-sm" placeholder="e.g. service_charge" required value="{{ old('charge_key') }}">
+                                    <span class="text-[10px] text-gray-400 block mt-1">Unique system identifier. No spaces (use underscores).</span>
+                                </div>
 
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1" for="label">Display Label</label>
-                        <input type="text" id="label" name="label" class="form-control text-sm" placeholder="e.g. Building Service Charge" required value="{{ old('label') }}">
-                    </div>
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1" for="label">Display Label</label>
+                                    <input type="text" id="label" name="label" class="form-control text-sm" placeholder="e.g. Building Service Charge" required value="{{ old('label') }}">
+                                </div>
 
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1" for="default_amount">Default Amount (BDT)</label>
-                        <div class="input-group">
-                            <span class="input-group-text text-sm bg-gray-50 text-gray-500">৳</span>
-                            <input type="number" step="0.01" id="default_amount" name="default_amount" class="form-control text-sm" placeholder="0.00" required value="{{ old('default_amount') }}">
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1" for="default_amount">Default Amount (BDT)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text text-sm bg-gray-50 text-gray-500">৳</span>
+                                        <input type="number" step="0.01" id="default_amount" name="default_amount" class="form-control text-sm" placeholder="0.00" required value="{{ old('default_amount') }}">
+                                    </div>
+                                </div>
+
+                                <div class="pt-2">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="is_building_wide" name="is_building_wide" value="1" {{ old('is_building_wide') ? 'checked' : '' }}>
+                                        <label class="form-check-label text-xs font-semibold text-gray-700 cursor-pointer" for="is_building_wide">Apply building-wide to all active flats</label>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="w-100 btn btn-primary py-2 font-semibold text-xs tracking-wide shadow-sm mt-4">
+                                    <i class="fa-solid fa-floppy-disk me-2"></i> Save Template Heading
+                                </button>
+                            </form>
                         </div>
-                    </div>
-
-                    <div class="pt-2">
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" role="switch" id="is_building_wide" name="is_building_wide" value="1" {{ old('is_building_wide') ? 'checked' : '' }}>
-                            <label class="form-check-label text-xs font-semibold text-gray-700 cursor-pointer" for="is_building_wide">Apply building-wide to all active flats</label>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="w-100 btn btn-primary py-2 font-semibold text-xs tracking-wide shadow-sm mt-4">
-                        <i class="fa-solid fa-floppy-disk me-2"></i> Save Template Heading
-                    </button>
-                </form>
+                    </x-slot:add>
+                </x-mobile-panel-toggles>
             </div>
 
             <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">

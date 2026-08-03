@@ -1282,3 +1282,38 @@ Free for personal and commercial use
       .hero-trust { gap: 12px; }
       .trust-divider { display: none; }
     }
+
+/* Mobile search / add panel toggles */
+.mobile-panel-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.mobile-panel-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-radius: 0.65rem;
+  background: #fff;
+  color: #334155;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.mobile-panel-toggle:hover {
+  border-color: rgba(26, 122, 110, 0.45);
+  color: var(--accent, #1a7a6e);
+}
+.mobile-panel-toggle.is-active {
+  background: var(--accent-ghost, rgba(26, 122, 110, 0.12));
+  border-color: var(--accent, #1a7a6e);
+  color: var(--accent, #1a7a6e);
+}
+@media (max-width: 767.98px) {
+  .mobile-panel:not(.is-open) {
+    display: none !important;
+  }
+}

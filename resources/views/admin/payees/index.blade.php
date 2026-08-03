@@ -18,32 +18,36 @@
             </div>
         @endif
 
-        <div class="bg-white border rounded-3 shadow-sm p-4 mb-4">
-            <h2 class="h5 fw-bold mb-3">Add / Register payee</h2>
-            <form method="post" action="{{ route('admin.payees.store') }}" class="row g-3">
-                @csrf
-                <div class="col-md-4">
-                    <label class="form-label">Name</label>
-                    <input type="text" name="name" class="form-control" value="{{ old('name') }}" required maxlength="120"
-                           placeholder="e.g. WASA">
+        <x-mobile-panel-toggles :add-open="$errors->any()">
+            <x-slot:add>
+                <div class="bg-white border rounded-3 shadow-sm p-4 mb-4">
+                    <h2 class="h5 fw-bold mb-3">Add / Register payee</h2>
+                    <form method="post" action="{{ route('admin.payees.store') }}" class="row g-3">
+                        @csrf
+                        <div class="col-md-4">
+                            <label class="form-label">Name</label>
+                            <input type="text" name="name" class="form-control" value="{{ old('name') }}" required maxlength="120"
+                                   placeholder="e.g. WASA">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Phone (optional)</label>
+                            <input type="text" name="phone" class="form-control" value="{{ old('phone') }}" maxlength="20">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Note (optional)</label>
+                            <input type="text" name="note" class="form-control" value="{{ old('note') }}" maxlength="255">
+                        </div>
+                        <div class="col-md-1">
+                            <label class="form-label">Sort</label>
+                            <input type="number" name="sort_order" class="form-control" value="{{ old('sort_order') }}" min="0">
+                        </div>
+                        <div class="col-md-1 d-flex align-items-end">
+                            <button class="btn btn-primary w-100">Add</button>
+                        </div>
+                    </form>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">Phone (optional)</label>
-                    <input type="text" name="phone" class="form-control" value="{{ old('phone') }}" maxlength="20">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Note (optional)</label>
-                    <input type="text" name="note" class="form-control" value="{{ old('note') }}" maxlength="255">
-                </div>
-                <div class="col-md-1">
-                    <label class="form-label">Sort</label>
-                    <input type="number" name="sort_order" class="form-control" value="{{ old('sort_order') }}" min="0">
-                </div>
-                <div class="col-md-1 d-flex align-items-end">
-                    <button class="btn btn-primary w-100">Add</button>
-                </div>
-            </form>
-        </div>
+            </x-slot:add>
+        </x-mobile-panel-toggles>
 
         <div class="table-responsive bg-white border rounded-3 shadow-sm">
             <table class="table mb-0 align-middle">

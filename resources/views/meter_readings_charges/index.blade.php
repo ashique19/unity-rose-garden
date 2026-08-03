@@ -3,26 +3,30 @@
 
 <div class="features-section pb-10">
     <div class="container">
-        <div class="fv-card">
-            <div class="fv-card-label">Show Reading By Month</div>
-            <div class="fv-list" style="margin-top:8px">
-                <div class="fv-list-item">
-                    <span class="fv-list-name">
-                    @for($i=0; $i > -6; $i--)
-                        @php 
-                            $loopMonth = \Carbon\Carbon::now()->addMonths($i); 
-                            $isSelected = $request->query('q') === $loopMonth->format('Y-M');
-                        @endphp
-                        <a class="fv-pill {{ $isSelected ? 'bg-primary text-white' : 'green' }} m-1" 
-                           href="{{ route('meter-readings-and-charges.index', ['q' => $loopMonth->format('Y-M')]) }}" 
-                           style="display: inline-block;">
-                            {{ $loopMonth->format('Y-M') }}
-                        </a>
-                    @endfor
-                    </span>
+        <x-mobile-panel-toggles :search-open="$request->filled('q')">
+            <x-slot:search>
+                <div class="fv-card">
+                    <div class="fv-card-label">Show Reading By Month</div>
+                    <div class="fv-list" style="margin-top:8px">
+                        <div class="fv-list-item">
+                            <span class="fv-list-name">
+                            @for($i=0; $i > -6; $i--)
+                                @php 
+                                    $loopMonth = \Carbon\Carbon::now()->addMonths($i); 
+                                    $isSelected = $request->query('q') === $loopMonth->format('Y-M');
+                                @endphp
+                                <a class="fv-pill {{ $isSelected ? 'bg-primary text-white' : 'green' }} m-1" 
+                                   href="{{ route('meter-readings-and-charges.index', ['q' => $loopMonth->format('Y-M')]) }}" 
+                                   style="display: inline-block;">
+                                    {{ $loopMonth->format('Y-M') }}
+                                </a>
+                            @endfor
+                            </span>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
+            </x-slot:search>
+        </x-mobile-panel-toggles>
     </div>
 </div>
 

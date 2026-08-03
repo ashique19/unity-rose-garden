@@ -15,39 +15,43 @@
             </div>
         @endif
 
-        <div class="bg-white border rounded-3 shadow-sm p-4 mb-4">
-            <h2 class="h5 fw-bold mb-3">Add user</h2>
-            <form method="post" action="{{ route('admin.users.store') }}" class="row g-3">
-                @csrf
-                <div class="col-md-3">
-                    <label class="form-label">Name</label>
-                    <input type="text" name="name" class="form-control" value="{{ old('name') }}" required>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Phone (11 digits)</label>
-                    <input type="text" name="phone" class="form-control" value="{{ old('phone') }}"
-                           inputmode="numeric" pattern="[0-9]{11}" maxlength="11" required>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Password</label>
-                    <input type="password" name="password" class="form-control" required minlength="4">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label d-block">Roles</label>
-                    @foreach($roles as $role)
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="checkbox" name="roles[]"
-                                   value="{{ $role->name }}" id="new-role-{{ $role->name }}"
-                                   @checked(collect(old('roles', ['admin']))->contains($role->name))>
-                            <label class="form-check-label" for="new-role-{{ $role->name }}">{{ $role->label }}</label>
+        <x-mobile-panel-toggles :add-open="$errors->any()">
+            <x-slot:add>
+                <div class="bg-white border rounded-3 shadow-sm p-4 mb-4">
+                    <h2 class="h5 fw-bold mb-3">Add user</h2>
+                    <form method="post" action="{{ route('admin.users.store') }}" class="row g-3">
+                        @csrf
+                        <div class="col-md-3">
+                            <label class="form-label">Name</label>
+                            <input type="text" name="name" class="form-control" value="{{ old('name') }}" required>
                         </div>
-                    @endforeach
+                        <div class="col-md-3">
+                            <label class="form-label">Phone (11 digits)</label>
+                            <input type="text" name="phone" class="form-control" value="{{ old('phone') }}"
+                                   inputmode="numeric" pattern="[0-9]{11}" maxlength="11" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Password</label>
+                            <input type="password" name="password" class="form-control" required minlength="4">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label d-block">Roles</label>
+                            @foreach($roles as $role)
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="roles[]"
+                                           value="{{ $role->name }}" id="new-role-{{ $role->name }}"
+                                           @checked(collect(old('roles', ['admin']))->contains($role->name))>
+                                    <label class="form-check-label" for="new-role-{{ $role->name }}">{{ $role->label }}</label>
+                                </div>
+                            @endforeach
+                        </div>
+                        <div class="col-12">
+                            <button class="btn btn-primary">Add user</button>
+                        </div>
+                    </form>
                 </div>
-                <div class="col-12">
-                    <button class="btn btn-primary">Add user</button>
-                </div>
-            </form>
-        </div>
+            </x-slot:add>
+        </x-mobile-panel-toggles>
 
         <div class="table-responsive bg-white border rounded-3 shadow-sm">
             <table class="table mb-0 align-middle">

@@ -8,31 +8,6 @@
             <p class="text-muted mb-0">Cash in (flat optional) and cash out. Optionally link bill photos or media URLs.</p>
         </div>
 
-        <form method="get" class="row g-2 align-items-end bg-white border rounded-3 shadow-sm p-3 mb-4">
-            <div class="col-md-3">
-                <label for="from" class="form-label">From date</label>
-                <input type="date" name="from" id="from" class="form-control" value="{{ $from }}">
-            </div>
-            <div class="col-md-3">
-                <label for="to" class="form-label">To date</label>
-                <input type="date" name="to" id="to" class="form-control" value="{{ $to }}">
-            </div>
-            <div class="col-md-3">
-                <label for="type" class="form-label">Type</label>
-                <select name="type" id="type" class="form-select">
-                    <option value="">All</option>
-                    <option value="cash_in" @selected($filterType === 'cash_in')>Cash in</option>
-                    <option value="cash_out" @selected($filterType === 'cash_out')>Cash out</option>
-                </select>
-            </div>
-            <div class="col-md-3 d-flex gap-2">
-                <button class="btn btn-outline-primary flex-grow-1">Search</button>
-                @if($from || $to || $filterType)
-                    <a href="{{ route('admin.ledger.index') }}" class="btn btn-outline-secondary">Clear</a>
-                @endif
-            </div>
-        </form>
-
         @if(session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
@@ -42,6 +17,35 @@
             </div>
         @endif
 
+        <x-mobile-panel-toggles :search-open="filled($from) || filled($to) || filled($filterType)" :add-open="$errors->any()">
+            <x-slot:search>
+                <form method="get" class="row g-2 align-items-end bg-white border rounded-3 shadow-sm p-3 mb-4">
+                    <div class="col-md-3">
+                        <label for="from" class="form-label">From date</label>
+                        <input type="date" name="from" id="from" class="form-control" value="{{ $from }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="to" class="form-label">To date</label>
+                        <input type="date" name="to" id="to" class="form-control" value="{{ $to }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="type" class="form-label">Type</label>
+                        <select name="type" id="type" class="form-select">
+                            <option value="">All</option>
+                            <option value="cash_in" @selected($filterType === 'cash_in')>Cash in</option>
+                            <option value="cash_out" @selected($filterType === 'cash_out')>Cash out</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex gap-2">
+                        <button class="btn btn-outline-primary flex-grow-1">Search</button>
+                        @if($from || $to || $filterType)
+                            <a href="{{ route('admin.ledger.index') }}" class="btn btn-outline-secondary">Clear</a>
+                        @endif
+                    </div>
+                </form>
+            </x-slot:search>
+
+            <x-slot:add>
         <div class="bg-white border rounded-3 shadow-sm p-4 mb-4">
             <h2 class="h5 fw-bold mb-3">Add entry</h2>
             <form method="post" action="{{ route('admin.ledger.store') }}" class="row g-3">
@@ -155,6 +159,8 @@
                 </div>
             </form>
         </div>
+            </x-slot:add>
+        </x-mobile-panel-toggles>
 
         <div class="table-responsive bg-white border rounded-3 shadow-sm">
             <table class="table mb-0 align-middle">
