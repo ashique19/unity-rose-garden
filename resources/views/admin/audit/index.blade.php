@@ -8,7 +8,7 @@
             <p class="text-muted mb-0">Recent admin actions.</p>
         </div>
 
-        <x-mobile-panel-toggles :search-open="$q !== '' || filled($from) || filled($to)">
+        <x-mobile-panel-toggles :search-open="request()->hasAny(['q', 'from', 'to'])">
             <x-slot:search>
                 <form method="get" class="row g-2 align-items-end bg-white border rounded-3 shadow-sm p-3 mb-4">
                     <div class="col-md-4">

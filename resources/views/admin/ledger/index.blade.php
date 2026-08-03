@@ -17,7 +17,7 @@
             </div>
         @endif
 
-        <x-mobile-panel-toggles :search-open="filled($from) || filled($to) || filled($filterType)" :add-open="$errors->any()">
+        <x-mobile-panel-toggles :search-open="request()->hasAny(['from', 'to', 'type'])" :add-open="$errors->any()">
             <x-slot:search>
                 <form method="get" class="row g-2 align-items-end bg-white border rounded-3 shadow-sm p-3 mb-4">
                     <div class="col-md-3">
