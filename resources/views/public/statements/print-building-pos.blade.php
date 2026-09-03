@@ -74,6 +74,7 @@
             flex-shrink: 0;
             text-align: right;
             text-transform: uppercase;
+            align-self: center;
         }
         .slip-header .brand {
             font-weight: bold;
@@ -85,14 +86,10 @@
             font-size: 12px;
             margin-top: 2px;
         }
-        .slip-header .flat-label {
-            font-size: 11px;
-            line-height: 1.2;
-        }
         .slip-header .flat-name {
             font-weight: bold;
-            font-size: 16px;
-            line-height: 1.2;
+            font-size: 28px;
+            line-height: 1;
         }
         .section {
             font-weight: bold;
@@ -175,7 +172,6 @@
                     <div class="month">{{ $selectedMonth->format('F Y') }}</div>
                 </div>
                 <div class="right">
-                    <div class="flat-label">FLAT</div>
                     <div class="flat-name">{{ $row['flat_name'] }}</div>
                 </div>
             </div>
