@@ -86,6 +86,8 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:admin,secretary'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('flat-bill-type-settings', [FlatBillTypeSettingController::class, 'index'])
             ->name('flat-bill-type-settings.index');
+        Route::post('flat-bill-type-settings/bill-types', [FlatBillTypeSettingController::class, 'storeBillType'])
+            ->name('flat-bill-type-settings.store-bill-type');
         Route::put('flat-bill-type-settings', [FlatBillTypeSettingController::class, 'update'])
             ->name('flat-bill-type-settings.update');
 
