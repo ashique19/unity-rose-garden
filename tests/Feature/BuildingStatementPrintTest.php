@@ -69,6 +69,7 @@ class BuildingStatementPrintTest extends TestCase
             ->assertSee('Print POS')
             ->assertSee(route('admin.dashboard', absolute: false), false)
             ->assertSee('72mm', false)
+            ->assertSee('page-break-after: always', false)
             ->assertDontSee('BUILDING TOTAL')
             ->assertDontSee('Flat 3A');
     }

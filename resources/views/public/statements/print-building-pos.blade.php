@@ -55,6 +55,8 @@
         .flat-slip {
             page-break-inside: avoid;
             break-inside: avoid;
+            page-break-after: always;
+            break-after: page;
             margin-bottom: 14px;
             padding-bottom: 4px;
         }
