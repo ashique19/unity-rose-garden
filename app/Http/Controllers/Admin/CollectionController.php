@@ -35,13 +35,11 @@ class CollectionController extends Controller
             ->values();
 
         $flats = Flat::query()->orderBy('name')->get();
-        $building = Building::query()->first();
 
         return view('admin.collections.index', [
             'selectedMonth' => $month,
             'statements' => $statements,
             'flats' => $flats,
-            'availableBalance' => $building ? $building->balanceAmount() : 0.0,
         ]);
     }
 

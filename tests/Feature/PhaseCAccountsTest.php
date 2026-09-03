@@ -352,6 +352,9 @@ class PhaseCAccountsTest extends TestCase
             ->assertOk()
             ->assertSee('value="2026-06"', false)
             ->assertSee('2A')
-            ->assertSee('10B');
+            ->assertSee('10B')
+            ->assertSee('Add collection')
+            ->assertDontSee('Available before')
+            ->assertDontSee('After this collection');
     }
 }

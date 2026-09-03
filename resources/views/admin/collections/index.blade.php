@@ -27,20 +27,7 @@
         <x-mobile-panel-toggles :add-open="$errors->any()">
             <x-slot:add>
                 <div class="bg-white border rounded-3 shadow-sm p-4 mb-4">
-                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
-                        <h2 class="h5 fw-bold mb-0">Add collection</h2>
-                        <div class="d-flex flex-wrap gap-3 small" id="collection-balance-preview"
-                             data-balance="{{ number_format($availableBalance, 2, '.', '') }}">
-                            <div>
-                                <span class="text-muted">Available before</span>
-                                <div class="fw-semibold">৳<span id="collection-balance-before">{{ number_format($availableBalance, 2) }}</span></div>
-                            </div>
-                            <div>
-                                <span class="text-muted">After this collection</span>
-                                <div class="fw-semibold">৳<span id="collection-balance-after">{{ number_format($availableBalance, 2) }}</span></div>
-                            </div>
-                        </div>
-                    </div>
+                    <h2 class="h5 fw-bold mb-3">Add collection</h2>
                     <form method="post" action="{{ route('admin.collections.store') }}" class="row g-3" id="collection-create-form">
                         @csrf
                         <div class="col-md-4">
@@ -160,38 +147,16 @@
   const amount = document.getElementById('collection-amount');
   if (!select || !amount) return;
 
-  const preview = document.getElementById('collection-balance-preview');
-  const postCheckbox = document.getElementById('post_to_ledger');
-  const afterEl = document.getElementById('collection-balance-after');
-  const before = preview ? parseFloat(preview.dataset.balance || '0') : 0;
-
-  function formatMoney(value) {
-    return value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
-
-  function updateAfter() {
-    if (!afterEl || !postCheckbox) return;
-    const value = parseFloat(amount.value || '0');
-    const hitLedger = postCheckbox.checked && !Number.isNaN(value) && value > 0;
-    afterEl.textContent = formatMoney(hitLedger ? before + value : before);
-  }
-
   select.addEventListener('change', () => {
     const pending = select.selectedOptions[0]?.dataset?.pending ?? '';
     if (pending === '' || Number(pending) <= 0) {
       amount.value = '';
-      updateAfter();
       return;
     }
     amount.value = pending;
     amount.focus();
     amount.select();
-    updateAfter();
   });
-
-  amount.addEventListener('input', updateAfter);
-  postCheckbox?.addEventListener('change', updateAfter);
-  updateAfter();
 })();
 </script>
 @endsection
