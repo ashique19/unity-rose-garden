@@ -60,21 +60,6 @@
         th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: #444; }
         .text-end { text-align: right; }
         .gas-eq { font-variant-numeric: tabular-nums; }
-        .gas-photo {
-            margin-top: 8px;
-            max-width: 160px;
-            max-height: 120px;
-            border: 1px solid #ccc;
-            border-radius: 3px;
-            display: block;
-            object-fit: contain;
-            background: #fafafa;
-        }
-        .gas-photo-label {
-            font-size: 11px;
-            color: #555;
-            margin-top: 4px;
-        }
         .total-line {
             margin-top: 8px;
             padding-top: 6px;
@@ -161,10 +146,6 @@
                             @endif
                         </tbody>
                     </table>
-                    @if(! empty($row['gas_photo_data_uri']))
-                        <img class="gas-photo" src="{{ $row['gas_photo_data_uri'] }}" alt="Gas meter photo for flat {{ $row['flat_name'] }}">
-                        <div class="gas-photo-label">Meter photo</div>
-                    @endif
                 </div>
                 <div>
                     <table>
