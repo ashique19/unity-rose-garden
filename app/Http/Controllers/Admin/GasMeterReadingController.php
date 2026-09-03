@@ -63,6 +63,11 @@ class GasMeterReadingController extends Controller
             fn (array $row) => $row['reading'] && ! $row['reading']->isConfirmed()
         )->count();
         $missingCount = $rows->count() - $confirmedCount - $photoOnlyCount;
+        $totalUsedM3 = $rows->sum(function (array $row) {
+            $reading = $row['reading'];
+
+            return ($reading && $reading->isConfirmed()) ? $reading->consumedM3() : 0.0;
+        });
 
         $availableMonths = GasMeterReading::query()
             ->select('bill_month')
@@ -80,6 +85,7 @@ class GasMeterReadingController extends Controller
             'confirmedCount' => $confirmedCount,
             'photoOnlyCount' => $photoOnlyCount,
             'missingCount' => $missingCount,
+            'totalUsedM3' => $totalUsedM3,
             'availableMonths' => $availableMonths,
             'previousMonth' => $month->copy()->subMonth(),
             'nextMonth' => $month->copy()->addMonth(),

@@ -288,6 +288,23 @@
     return body;
   }
 
+  function refreshTotalUsed() {
+    const totalEl = document.getElementById('gas-total-used');
+    if (!totalEl) return;
+
+    let total = 0;
+    document.querySelectorAll('[data-flat-row]').forEach((row) => {
+      const used = row.children[4];
+      if (!used) return;
+      const raw = (used.textContent || '').replace(/,/g, '').trim();
+      if (raw === '' || raw === '—') return;
+      const value = Number(raw);
+      if (!Number.isNaN(value)) total += value;
+    });
+
+    totalEl.textContent = total.toFixed(2);
+  }
+
   function convertCreateRowToUpdate(form, reading) {
     const flatId = String(reading.flat_id);
     const row = document.querySelector('[data-flat-row="' + flatId + '"]');
@@ -355,6 +372,7 @@
 
     row.setAttribute('data-row-mode', 'update');
     row.setAttribute('data-reading-id', String(reading.id));
+    refreshTotalUsed();
   }
 
   function applyUpdateRow(form, reading) {
@@ -376,6 +394,8 @@
       saveBtn.disabled = false;
       saveBtn.textContent = 'Save';
     }
+
+    refreshTotalUsed();
   }
 
   const inflightSaves = new Set();

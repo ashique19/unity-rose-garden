@@ -200,6 +200,13 @@
                         </tr>
                     @endforeach
                 </tbody>
+                <tfoot class="table-light">
+                    <tr>
+                        <th colspan="4" class="text-end">Total used</th>
+                        <th id="gas-total-used" data-total-used>{{ number_format($totalUsedM3, 2) }}</th>
+                        <th colspan="2"></th>
+                    </tr>
+                </tfoot>
             </table>
         </div>
     </div>
@@ -207,5 +214,5 @@
 @endsection
 
 @section('js')
-<script src="/js/gas-meter-offline.js?v=3"></script>
+<script src="/js/gas-meter-offline.js?v=4"></script>
 @endsection

@@ -219,4 +219,50 @@ class OfflineGasPhotoFlowTest extends TestCase
             ->assertOk()
             ->assertJsonPath('reading.confirmed', true);
     }
+
+    #[Test]
+    public function month_page_shows_total_used_at_bottom(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $user = User::query()->where('phone', '01785636359')->firstOrFail();
+        $flatA = Flat::query()->where('name', '2A')->firstOrFail();
+        $flatB = Flat::query()->where('name', '2B')->firstOrFail();
+
+        GasMeterReading::query()->whereDate('bill_month', '2026-08-01')->delete();
+
+        GasMeterReading::query()->create([
+            'flat_id' => $flatA->id,
+            'bill_month' => '2026-08-01',
+            'reading_date' => '2026-08-31',
+            'previous_m3' => 10,
+            'current_m3' => 12.5,
+            'confirmed_m3' => 12.5,
+        ]);
+        GasMeterReading::query()->create([
+            'flat_id' => $flatB->id,
+            'bill_month' => '2026-08-01',
+            'reading_date' => '2026-08-31',
+            'previous_m3' => 20,
+            'current_m3' => 23.25,
+            'confirmed_m3' => 23.25,
+        ]);
+        // Photo-only draft must not count toward total used.
+        GasMeterReading::query()->create([
+            'flat_id' => Flat::query()->where('name', '3B')->value('id'),
+            'bill_month' => '2026-08-01',
+            'reading_date' => '2026-08-31',
+            'previous_m3' => 5,
+            'current_m3' => 5,
+            'confirmed_m3' => null,
+            'photo_path' => 'meter-readings/draft.jpg',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('admin.gas-readings.index', ['month' => '2026-08']))
+            ->assertOk()
+            ->assertSee('Total used')
+            ->assertSee('id="gas-total-used"', false)
+            ->assertSee('>5.75<', false);
+    }
 }
