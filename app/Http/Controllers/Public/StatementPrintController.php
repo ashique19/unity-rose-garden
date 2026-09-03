@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
 use App\Models\Flat;
+use App\Models\GasMeterReading;
 use App\Models\MonthlyStatement;
 use App\Support\BillMonth;
+use App\Support\GasMeterPhotoThumb;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -24,12 +26,18 @@ class StatementPrintController extends Controller
 
         $statement->load(['lines', 'collections']);
 
+        $gasReading = GasMeterReading::query()
+            ->where('flat_id', $flat->id)
+            ->whereDate('bill_month', $month->toDateString())
+            ->first();
+
         return view('public.statements.print', [
             'flat' => $flat,
             'statement' => $statement,
             'selectedMonth' => $month,
             'gasLine' => $statement->gasLine(),
             'otherLines' => $statement->otherLines(),
+            'gasPhotoDataUri' => GasMeterPhotoThumb::dataUri($gasReading?->photo_path),
         ]);
     }
 
@@ -50,7 +58,13 @@ class StatementPrintController extends Controller
             })
             ->values();
 
-        $rows = $statements->map(function (MonthlyStatement $statement) {
+        $photosByFlat = GasMeterReading::query()
+            ->whereDate('bill_month', $monthKey)
+            ->whereNotNull('photo_path')
+            ->get()
+            ->keyBy('flat_id');
+
+        $rows = $statements->map(function (MonthlyStatement $statement) use ($photosByFlat) {
             $gasLine = $statement->gasLine();
             $otherLines = $statement->otherLines()->where('enabled', true)->values();
             $meta = $gasLine?->meta ?? [];
@@ -60,6 +74,8 @@ class StatementPrintController extends Controller
             $total = (float) $statement->lines
                 ->where('enabled', true)
                 ->sum(fn ($line) => (float) $line->amount);
+
+            $reading = $photosByFlat->get($statement->flat_id);
 
             return [
                 'flat_name' => $statement->flat?->name ?? '—',
@@ -72,6 +88,7 @@ class StatementPrintController extends Controller
                     ? (float) ($meta['rate_per_kg'] ?? $gasLine->rate ?? 0)
                     : null,
                 'gas_amount' => $gasLine ? $gasAmount : null,
+                'gas_photo_data_uri' => GasMeterPhotoThumb::dataUri($reading?->photo_path),
                 'other_lines' => $otherLines,
                 'other_amount' => $otherAmount,
                 'total' => $total,

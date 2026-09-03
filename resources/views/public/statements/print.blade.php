@@ -31,6 +31,17 @@
             font: inherit;
             cursor: pointer;
         }
+        .gas-photo {
+            margin: 8px 0 4px;
+            max-width: 200px;
+            max-height: 150px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            display: block;
+            object-fit: contain;
+            background: #fafafa;
+        }
+        .gas-photo-label { font-size: 12px; color: #555; margin-bottom: 12px; }
         @media print {
             .no-print { display: none !important; }
             body { padding: 0; max-width: none; }
@@ -89,6 +100,10 @@
 
     @if($gasLine)
         <h2>Gas details</h2>
+        @if(! empty($gasPhotoDataUri))
+            <img class="gas-photo" src="{{ $gasPhotoDataUri }}" alt="Gas meter photo for flat {{ $flat->name }}">
+            <div class="gas-photo-label">Meter photo</div>
+        @endif
         @php $meta = $gasLine->meta ?? []; @endphp
         <table>
             <tbody>
