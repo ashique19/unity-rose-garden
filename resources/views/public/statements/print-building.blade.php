@@ -70,16 +70,6 @@
             display: flex;
             justify-content: space-between;
         }
-        .grand {
-            margin-top: 20px;
-            padding: 12px 14px;
-            border: 2px solid #111;
-            font-weight: bold;
-            font-size: 26px;
-            line-height: 1.2;
-            display: flex;
-            justify-content: space-between;
-        }
         .empty { padding: 32px 0; text-align: center; color: #666; }
         @media print {
             .no-print { display: none !important; }
@@ -184,13 +174,6 @@
     @empty
         <div class="empty">No statements found for {{ $selectedMonth->format('F Y') }}.</div>
     @endforelse
-
-    @if($rows->isNotEmpty())
-        <div class="grand">
-            <span>Building total</span>
-            <span>৳{{ number_format($grandTotal, 2) }}</span>
-        </div>
-    @endif
 
     <p class="muted" style="margin-top: 24px; font-size: 11px;">
         Unity Rose Garden Association · Printed {{ now()->format('d M Y H:i') }}

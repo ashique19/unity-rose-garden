@@ -35,8 +35,8 @@ class BuildingStatementPrintTest extends TestCase
             ->assertSee('Reading (new − old)')
             ->assertSee('Used kg × rate/kg')
             ->assertSee('Other charges')
-            ->assertSee('Building total')
             ->assertSee('Print / Save as PDF')
+            ->assertDontSee('Building total')
             ->assertDontSee('Flat 3A');
     }
 
@@ -60,10 +60,10 @@ class BuildingStatementPrintTest extends TestCase
             ->assertSee('Monthly bills (POS)')
             ->assertSee('FLAT 2A')
             ->assertSee('TOTAL')
-            ->assertSee('BUILDING TOTAL')
             ->assertSee('Print POS')
             ->assertSee(route('admin.dashboard', absolute: false), false)
             ->assertSee('72mm', false)
+            ->assertDontSee('BUILDING TOTAL')
             ->assertDontSee('Flat 3A');
     }
 

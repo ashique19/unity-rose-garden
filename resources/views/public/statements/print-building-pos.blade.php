@@ -106,13 +106,6 @@
             line-height: 1.2;
             margin-top: 6px;
         }
-        .grand {
-            font-weight: bold;
-            font-size: 24px;
-            line-height: 1.2;
-            text-align: center;
-            margin-top: 8px;
-        }
         .empty { text-align: center; padding: 24px 0; }
         .footer {
             text-align: center;
@@ -207,14 +200,6 @@
     @empty
         <div class="empty">No statements for {{ $selectedMonth->format('F Y') }}.</div>
     @endforelse
-
-    @if($rows->isNotEmpty())
-        <div class="grand">
-            BUILDING TOTAL<br>
-            {{ number_format($grandTotal, 2) }}
-        </div>
-        <hr class="sep">
-    @endif
 
     <p class="footer muted">
         Printed {{ now()->format('d M Y H:i') }}
