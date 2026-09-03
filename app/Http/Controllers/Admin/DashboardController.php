@@ -14,16 +14,8 @@ class DashboardController extends Controller
     {
         $building = Building::query()->first();
 
-        $cashIn = (float) AccountLedgerEntry::query()
-            ->where('type', AccountLedgerEntry::TYPE_CASH_IN)
-            ->sum('amount');
-
-        $cashOut = (float) AccountLedgerEntry::query()
-            ->where('type', AccountLedgerEntry::TYPE_CASH_OUT)
-            ->sum('amount');
-
         $opening = (float) ($building?->opening_balance ?? 0);
-        $balance = $building?->balance() ?? number_format($opening + $cashIn - $cashOut, 2, '.', '');
+        $balance = $building?->balance() ?? number_format($opening, 2, '.', '');
         $pending = Building::totalPendingCollections();
 
         $recentEntries = AccountLedgerEntry::query()
@@ -37,15 +29,21 @@ class DashboardController extends Controller
             ->with(['flat', 'lines', 'collections'])
             ->get()
             ->filter(fn (MonthlyStatement $s) => (float) $s->pendingAmount() > 0)
-            ->sortByDesc(fn (MonthlyStatement $s) => (float) $s->pendingAmount())
-            ->take(15)
+            ->sortBy(function (MonthlyStatement $s) {
+                $name = $s->flat?->name ?? '';
+                preg_match('/^(\d+)([A-Z])$/i', $name, $m);
+
+                return [
+                    isset($m[1]) ? (int) $m[1] : 0,
+                    $m[2] ?? $name,
+                    $s->bill_month?->toDateString() ?? '',
+                ];
+            })
             ->values();
 
         return view('admin.dashboard.index', [
             'building' => $building,
             'opening' => $opening,
-            'cashIn' => $cashIn,
-            'cashOut' => $cashOut,
             'balance' => $balance,
             'pending' => $pending,
             'recentEntries' => $recentEntries,

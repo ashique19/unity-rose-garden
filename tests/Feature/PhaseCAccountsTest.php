@@ -300,7 +300,45 @@ class PhaseCAccountsTest extends TestCase
         $this->actingAs($user)
             ->get(route('admin.dashboard'))
             ->assertOk()
-            ->assertSee('Pending collections');
+            ->assertSee('Pending collections')
+            ->assertDontSee('Total cash in')
+            ->assertDontSee('Total cash out')
+            ->assertSee('Receive');
+    }
+
+    #[Test]
+    public function dashboard_receive_records_pending_collection_and_returns(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $user = User::query()->where('phone', '01785636359')->firstOrFail();
+
+        $statement = MonthlyStatement::query()
+            ->with(['flat', 'lines', 'collections'])
+            ->get()
+            ->first(fn (MonthlyStatement $s) => (float) $s->pendingAmount() > 0);
+
+        $this->assertNotNull($statement);
+
+        $pending = (float) $statement->pendingAmount();
+        $flatName = $statement->flat?->name;
+
+        $this->actingAs($user)
+            ->post(route('admin.collections.store'), [
+                'monthly_statement_id' => $statement->id,
+                'amount' => $pending,
+                'collected_on' => now()->toDateString(),
+                'post_to_ledger' => '1',
+                'redirect_to' => 'dashboard',
+            ])
+            ->assertRedirect(route('admin.dashboard'))
+            ->assertSessionHas('success');
+
+        $this->assertEquals(0.0, (float) $statement->fresh()->load(['lines', 'collections'])->pendingAmount());
+
+        $this->actingAs($user)
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('Collection recorded for '.$flatName);
     }
 
     #[Test]

@@ -53,6 +53,7 @@ class CollectionController extends Controller
             'collected_on' => ['required', 'date'],
             'note' => ['nullable', 'string', 'max:255'],
             'post_to_ledger' => ['nullable', 'boolean'],
+            'redirect_to' => ['nullable', 'in:dashboard'],
         ]);
 
         $statement = MonthlyStatement::query()->with('flat')->findOrFail($data['monthly_statement_id']);
@@ -93,6 +94,12 @@ class CollectionController extends Controller
                 'balance_after' => $balanceAfter,
             ]);
         });
+
+        if (($data['redirect_to'] ?? null) === 'dashboard') {
+            return redirect()
+                ->route('admin.dashboard')
+                ->with('success', 'Collection recorded for '.$statement->flat?->name.'.');
+        }
 
         return redirect()
             ->route('admin.collections.index', [
