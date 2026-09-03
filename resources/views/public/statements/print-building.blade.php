@@ -108,7 +108,7 @@
 
     @forelse($rows as $row)
         <section class="flat-block">
-            <h2>Flat {{ $row['flat_name'] }}</h2>
+            <h2>Flat {{ $row['flat_name'] }} · {{ $selectedMonth->format('M Y') }}</h2>
             <div class="flat-grid">
                 <div>
                     <table>

@@ -159,7 +159,7 @@
 
     @forelse($rows as $row)
         <section class="flat-slip">
-            <div class="flat-title">FLAT {{ $row['flat_name'] }}</div>
+            <div class="flat-title">FLAT {{ $row['flat_name'] }} · {{ $selectedMonth->format('M Y') }}</div>
             <hr class="sep">
 
             <div class="section">Gas</div>
