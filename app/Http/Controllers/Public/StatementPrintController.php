@@ -79,6 +79,7 @@ class StatementPrintController extends Controller
             $total = (float) $statement->lines
                 ->where('enabled', true)
                 ->sum(fn ($line) => (float) $line->amount);
+            $total = (float) ceil(round($total, 2));
 
             return [
                 'flat_name' => $statement->flat?->name ?? '—',

@@ -37,6 +37,7 @@ class BuildingStatementPrintTest extends TestCase
             ->assertSee('Used kg × rate/kg')
             ->assertSee('Other charges')
             ->assertSee('Print / Save as PDF')
+            ->assertSee('৳1,707')
             ->assertDontSee('Building total')
             ->assertDontSee('Flat 3A');
     }
@@ -70,6 +71,7 @@ class BuildingStatementPrintTest extends TestCase
             ->assertSee(route('admin.dashboard', absolute: false), false)
             ->assertSee('72mm', false)
             ->assertSee('page-break-after: always', false)
+            ->assertSee('1,707')
             ->assertDontSee('BUILDING TOTAL')
             ->assertDontSee('Flat 3A');
     }

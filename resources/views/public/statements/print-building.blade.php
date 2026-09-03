@@ -168,7 +168,7 @@
             </div>
             <div class="total-line">
                 <span>Total</span>
-                <span>৳{{ number_format($row['total'], 2) }}</span>
+                <span>৳{{ number_format($row['total'], 0) }}</span>
             </div>
         </section>
     @empty

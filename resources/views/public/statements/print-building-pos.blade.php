@@ -210,7 +210,7 @@
             <hr class="sep-double">
             <div class="row total-row">
                 <span class="label">TOTAL</span>
-                <span class="value">{{ number_format($row['total'], 2) }}</span>
+                <span class="value">{{ number_format($row['total'], 0) }}</span>
             </div>
             <hr class="sep">
         </section>
