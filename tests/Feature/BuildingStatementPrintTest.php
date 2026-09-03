@@ -58,9 +58,11 @@ class BuildingStatementPrintTest extends TestCase
 
         $this->get(route('public.statements.print-building-pos', ['month' => '2026-06']))
             ->assertOk()
-            ->assertSee('Monthly bills (POS)')
+            ->assertSee('Unity Rose Garden')
+            ->assertSee('Monthly bills - June 2026')
             ->assertSee('FLAT 2A')
-            ->assertSee('FLAT 2A · Jun 2026')
+            ->assertDontSee('FLAT 2A · Jun 2026')
+            ->assertDontSee('Monthly bills (POS)')
             ->assertSee('TOTAL')
             ->assertSee('Print POS')
             ->assertSee(route('admin.dashboard', absolute: false), false)

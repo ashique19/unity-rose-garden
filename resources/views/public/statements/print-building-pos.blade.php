@@ -42,62 +42,62 @@
             font: inherit;
             cursor: pointer;
         }
-        .receipt-header {
-            text-align: center;
-            margin-bottom: 10px;
+        .sep {
+            border: none;
+            border-top: 1px dashed #000;
+            margin: 6px 0;
         }
-        .receipt-header .brand {
+        .sep-double {
+            border: none;
+            border-top: 2px solid #000;
+            margin: 6px 0;
+        }
+        .flat-slip {
+            page-break-inside: avoid;
+            break-inside: avoid;
+            margin-bottom: 14px;
+            padding-bottom: 4px;
+        }
+        .slip-header {
+            text-align: center;
+            margin-bottom: 4px;
+        }
+        .slip-header .brand {
             font-weight: bold;
             font-size: 14px;
             text-transform: uppercase;
         }
-        .receipt-header .sub {
-            font-size: 11px;
+        .slip-header .sub {
+            font-size: 12px;
+            margin-top: 2px;
         }
-        .sep {
-            border: 0;
-            border-top: 1px dashed #000;
-            margin: 8px 0;
-        }
-        .sep-double {
-            border: 0;
-            border-top: 2px solid #000;
-            margin: 8px 0;
-        }
-        .flat-slip {
-            break-inside: avoid;
-            page-break-inside: avoid;
-            page-break-after: always;
-            margin-bottom: 10px;
-            padding-bottom: 6px;
-        }
-        .flat-slip:last-of-type {
-            page-break-after: auto;
-        }
-        .row {
-            display: flex;
-            justify-content: space-between;
-            gap: 8px;
-            align-items: flex-start;
-        }
-        .row .label { flex: 1 1 auto; word-break: break-word; }
-        .row .value {
-            flex: 0 0 auto;
-            text-align: right;
-            white-space: nowrap;
-            font-variant-numeric: tabular-nums;
-        }
-        .flat-title {
+        .slip-header .flat-name {
             font-weight: bold;
             font-size: 13px;
-            text-align: center;
-            margin: 0 0 4px;
+            margin-top: 4px;
+            text-transform: uppercase;
         }
         .section {
             font-weight: bold;
             margin: 6px 0 2px;
             text-transform: uppercase;
             font-size: 11px;
+        }
+        .row {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            align-items: baseline;
+        }
+        .row .label {
+            flex: 1;
+            min-width: 0;
+            word-break: break-word;
+        }
+        .row .value {
+            flex-shrink: 0;
+            text-align: right;
+            white-space: nowrap;
         }
         .muted { opacity: 0.75; }
         .total-row {
@@ -150,16 +150,13 @@
         @endif
     </div>
 
-    <div class="receipt-header">
-        <div class="brand">Unity Rose Garden</div>
-        <div class="sub">Monthly bills (POS)</div>
-        <div><strong>{{ $selectedMonth->format('F Y') }}</strong></div>
-    </div>
-    <hr class="sep">
-
     @forelse($rows as $row)
         <section class="flat-slip">
-            <div class="flat-title">FLAT {{ $row['flat_name'] }} · {{ $selectedMonth->format('M Y') }}</div>
+            <div class="slip-header">
+                <div class="brand">Unity Rose Garden</div>
+                <div class="sub">Monthly bills - {{ $selectedMonth->format('F Y') }}</div>
+                <div class="flat-name">FLAT {{ $row['flat_name'] }}</div>
+            </div>
             <hr class="sep">
 
             <div class="section">Gas</div>
