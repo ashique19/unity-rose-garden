@@ -65,6 +65,8 @@
             padding-top: 6px;
             border-top: 2px solid #111;
             font-weight: bold;
+            font-size: 26px;
+            line-height: 1.2;
             display: flex;
             justify-content: space-between;
         }
@@ -73,6 +75,8 @@
             padding: 12px 14px;
             border: 2px solid #111;
             font-weight: bold;
+            font-size: 26px;
+            line-height: 1.2;
             display: flex;
             justify-content: space-between;
         }

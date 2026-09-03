@@ -14,6 +14,7 @@
         body {
             font-family: "Courier New", Courier, monospace;
             font-size: 12px;
+            font-weight: bold;
             line-height: 1.35;
             color: #000;
             width: 72mm;
@@ -34,6 +35,7 @@
             align-items: center;
             font-family: system-ui, sans-serif;
             font-size: 13px;
+            font-weight: normal;
         }
         .toolbar a, .toolbar button, .toolbar select {
             padding: 8px 12px;
@@ -100,11 +102,14 @@
         .muted { opacity: 0.75; }
         .total-row {
             font-weight: bold;
-            font-size: 13px;
-            margin-top: 4px;
+            font-size: 24px;
+            line-height: 1.2;
+            margin-top: 6px;
         }
         .grand {
             font-weight: bold;
+            font-size: 24px;
+            line-height: 1.2;
             text-align: center;
             margin-top: 8px;
         }
