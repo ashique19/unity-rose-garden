@@ -39,4 +39,12 @@ class GasMeterReading extends Model
     {
         return max(0, (float) $this->current_m3 - (float) $this->previous_m3);
     }
+
+    /**
+     * Photo uploads create draft rows; a reading is confirmed once an admin saves the m³ value.
+     */
+    public function isConfirmed(): bool
+    {
+        return $this->confirmed_m3 !== null;
+    }
 }

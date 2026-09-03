@@ -112,4 +112,111 @@ class OfflineGasPhotoFlowTest extends TestCase
             ->postJson(route('admin.gas-readings.ocr', $flat), ['bill_month' => '2026-07'])
             ->assertStatus(422);
     }
+
+    #[Test]
+    public function after_photo_upload_reading_value_can_be_saved_without_reload(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        Storage::fake('public');
+
+        $user = User::query()->where('phone', '01785636359')->firstOrFail();
+        $flat = Flat::query()->where('name', '2A')->firstOrFail();
+
+        GasMeterReading::query()
+            ->where('flat_id', $flat->id)
+            ->whereDate('bill_month', '2026-07-01')
+            ->delete();
+
+        $photo = $this->actingAs($user)
+            ->postJson(route('admin.gas-readings.photo', $flat), [
+                'bill_month' => '2026-07',
+                'photo' => UploadedFile::fake()->image('meter.jpg', 800, 600),
+            ]);
+
+        $photo->assertOk()
+            ->assertJsonPath('ok', true)
+            ->assertJsonPath('reading.confirmed', false)
+            ->assertJsonStructure([
+                'reading' => ['id', 'update_url', 'destroy_url', 'flat_id'],
+            ]);
+
+        $draft = GasMeterReading::query()
+            ->where('flat_id', $flat->id)
+            ->whereDate('bill_month', '2026-07-01')
+            ->firstOrFail();
+
+        $this->assertNull($draft->confirmed_m3);
+        $this->assertNotNull($draft->photo_path);
+
+        // Garage UI still posts to store after a photo if the row was not converted —
+        // store must upsert the photo draft instead of failing unique.
+        $this->actingAs($user)
+            ->postJson(route('admin.gas-readings.store'), [
+                'flat_id' => $flat->id,
+                'bill_month' => '2026-07',
+                'reading_date' => '2026-07-31',
+                'previous_m3' => 46.28,
+                'current_m3' => 51.10,
+            ])
+            ->assertOk()
+            ->assertJsonPath('ok', true)
+            ->assertJsonPath('reading.id', $draft->id)
+            ->assertJsonPath('reading.current_m3', 51.1)
+            ->assertJsonPath('reading.confirmed', true);
+
+        $draft->refresh();
+        $this->assertEquals(51.10, (float) $draft->confirmed_m3);
+        $this->assertEquals(51.10, (float) $draft->current_m3);
+        $this->assertNotNull($draft->photo_path);
+
+        $this->actingAs($user)
+            ->get(route('admin.gas-readings.index', ['month' => '2026-07']))
+            ->assertOk()
+            ->assertSee('Browse months')
+            ->assertSee('Entered')
+            ->assertDontSee('Photo only — enter reading');
+    }
+
+    #[Test]
+    public function photo_only_draft_is_editable_on_month_page(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        Storage::fake('public');
+
+        $user = User::query()->where('phone', '01785636359')->firstOrFail();
+        $flat = Flat::query()->where('name', '2A')->firstOrFail();
+
+        GasMeterReading::query()
+            ->where('flat_id', $flat->id)
+            ->whereDate('bill_month', '2026-07-01')
+            ->delete();
+
+        $this->actingAs($user)
+            ->postJson(route('admin.gas-readings.photo', $flat), [
+                'bill_month' => '2026-07',
+                'photo' => UploadedFile::fake()->image('meter.jpg', 800, 600),
+            ])
+            ->assertOk();
+
+        $reading = GasMeterReading::query()
+            ->where('flat_id', $flat->id)
+            ->whereDate('bill_month', '2026-07-01')
+            ->firstOrFail();
+
+        $this->actingAs($user)
+            ->get(route('admin.gas-readings.index', ['month' => '2026-07']))
+            ->assertOk()
+            ->assertSee('Photo only — enter reading')
+            ->assertSee('gas-update-'.$reading->id, false)
+            ->assertSee('Browse months');
+
+        $this->actingAs($user)
+            ->putJson(route('admin.gas-readings.update', $reading), [
+                'reading_date' => '2026-07-31',
+                'previous_m3' => (float) $reading->previous_m3,
+                'current_m3' => ((float) $reading->previous_m3) + 2.5,
+            ])
+            ->assertOk()
+            ->assertJsonPath('reading.confirmed', true);
+    }
 }

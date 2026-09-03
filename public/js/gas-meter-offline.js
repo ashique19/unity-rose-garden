@@ -119,7 +119,7 @@
     if (syncBtn) syncBtn.disabled = pending.length === 0 || !navigator.onLine;
   }
 
-  async function syncOne(record) {
+    async function syncOne(record) {
     const form = new FormData();
     form.append('bill_month', record.billMonth);
     form.append('photo', record.blob, 'meter-' + record.flatId + '.jpg');
@@ -149,7 +149,49 @@
       thumb.classList.remove('d-none');
     }
 
+    // Photo creates a draft reading row — switch Add → Save so the value can be entered.
+    if (data.reading) {
+      const row = document.querySelector('[data-flat-row="' + record.flatId + '"]');
+      const saveForm = row?.querySelector('.gas-reading-save-form');
+      if (saveForm && saveForm.getAttribute('data-save-mode') === 'create') {
+        convertCreateRowToUpdate(saveForm, data.reading);
+      } else if (row && data.reading.id) {
+        row.setAttribute('data-reading-id', String(data.reading.id));
+        row.setAttribute('data-row-mode', 'update');
+      }
+      markPhotoOnlyHint(record.flatId, true);
+    }
+
     return data;
+  }
+
+  function markPhotoOnlyHint(flatId, show) {
+    const row = document.querySelector('[data-flat-row="' + flatId + '"]');
+    if (!row) return;
+    const nameCell = row.children[0];
+    if (!nameCell) return;
+    let hint = nameCell.querySelector('[data-photo-only-hint]');
+    if (show) {
+      if (!hint) {
+        hint = document.createElement('div');
+        hint.setAttribute('data-photo-only-hint', '1');
+        hint.className = 'small text-warning';
+        hint.textContent = 'Photo only — enter reading';
+        nameCell.appendChild(hint);
+      }
+      const current = row.querySelector('[data-current-input="' + flatId + '"]');
+      if (current && !current.value) {
+        current.placeholder = 'Enter from photo';
+      }
+      const used = row.querySelector('[data-used-cell="' + flatId + '"]') || row.children[4];
+      if (used && !used.hasAttribute('data-used-cell')) {
+        used.setAttribute('data-used-cell', flatId);
+        used.classList.add('text-muted');
+        used.textContent = '—';
+      }
+    } else if (hint) {
+      hint.remove();
+    }
   }
 
   async function syncAll(month) {
@@ -276,9 +318,16 @@
 
     const used = row.querySelector('[data-used-cell="' + flatId + '"]') || row.children[4];
     if (used) {
-      used.classList.remove('text-muted');
-      used.removeAttribute('data-used-cell');
-      used.textContent = Number(reading.consumed_m3).toFixed(2);
+      if (reading.confirmed) {
+        used.classList.remove('text-muted');
+        used.removeAttribute('data-used-cell');
+        used.textContent = Number(reading.consumed_m3).toFixed(2);
+        markPhotoOnlyHint(flatId, false);
+      } else {
+        used.classList.add('text-muted');
+        used.setAttribute('data-used-cell', flatId);
+        used.textContent = '—';
+      }
     }
 
     const saveBtn = row.querySelector('[data-save-btn="' + flatId + '"]');
@@ -316,8 +365,11 @@
     const used = row.children[4];
     if (used) {
       used.classList.remove('text-muted');
+      used.removeAttribute('data-used-cell');
       used.textContent = Number(reading.consumed_m3).toFixed(2);
     }
+
+    markPhotoOnlyHint(flatId, false);
 
     const saveBtn = row.querySelector('[data-save-btn="' + flatId + '"]');
     if (saveBtn) {

@@ -73,8 +73,9 @@ class GeminiMeterAssistTest extends TestCase
 
         $this->assertNotNull($reading->photo_path);
         $this->assertEquals(51.25, (float) $reading->gemini_suggestion);
-        // Draft current equals previous until admin confirms a different value.
-        $this->assertEquals((float) $reading->previous_m3, (float) $reading->confirmed_m3);
+        // Photo/OCR drafts stay unconfirmed until an admin saves the m³ value.
+        $this->assertNull($reading->confirmed_m3);
+        $this->assertEquals((float) $reading->previous_m3, (float) $reading->current_m3);
     }
 
     #[Test]

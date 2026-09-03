@@ -12,7 +12,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use RuntimeException;
 
@@ -57,10 +56,33 @@ class GasMeterReadingController extends Controller
             ];
         });
 
+        $confirmedCount = $rows->filter(
+            fn (array $row) => $row['reading'] && $row['reading']->isConfirmed()
+        )->count();
+        $photoOnlyCount = $rows->filter(
+            fn (array $row) => $row['reading'] && ! $row['reading']->isConfirmed()
+        )->count();
+        $missingCount = $rows->count() - $confirmedCount - $photoOnlyCount;
+
+        $availableMonths = GasMeterReading::query()
+            ->select('bill_month')
+            ->selectRaw('count(*) as readings_count')
+            ->selectRaw('sum(case when confirmed_m3 is not null then 1 else 0 end) as confirmed_count')
+            ->groupBy('bill_month')
+            ->orderByDesc('bill_month')
+            ->limit(18)
+            ->get();
+
         return view('admin.gas-readings.index', [
             'selectedMonth' => $month,
             'rows' => $rows,
             'geminiReady' => app(GeminiMeterReader::class)->isConfigured(),
+            'confirmedCount' => $confirmedCount,
+            'photoOnlyCount' => $photoOnlyCount,
+            'missingCount' => $missingCount,
+            'availableMonths' => $availableMonths,
+            'previousMonth' => $month->copy()->subMonth(),
+            'nextMonth' => $month->copy()->addMonth(),
         ]);
     }
 
@@ -138,17 +160,20 @@ class GasMeterReadingController extends Controller
                 'gemini_suggestion' => null,
             ]);
         } else {
+            // Photo-only draft: leave confirmed_m3 null until the value is entered.
             $reading = GasMeterReading::query()->create([
                 'flat_id' => $flat->id,
                 'bill_month' => $month->toDateString(),
                 'reading_date' => $data['reading_date'] ?? $month->copy()->endOfMonth()->toDateString(),
                 'previous_m3' => $suggestedPrev,
                 'current_m3' => $suggestedPrev,
-                'confirmed_m3' => $suggestedPrev,
+                'confirmed_m3' => null,
                 'photo_path' => $path,
                 'gemini_suggestion' => null,
             ]);
         }
+
+        $reading->refresh();
 
         \App\Support\Auditor::log('gas_reading.photo_uploaded', $reading, [
             'flat' => $flat->name,
@@ -167,6 +192,8 @@ class GasMeterReadingController extends Controller
             'photo_path' => $path,
             'previous_m3' => (float) $reading->previous_m3,
             'message' => 'Photo saved for later use. Enter the reading manually when ready.',
+            // Let the garage UI switch create → update so Add/Save still works after a photo.
+            'reading' => $this->readingPayload($reading, $flat),
         ]);
     }
 
@@ -283,7 +310,7 @@ class GasMeterReadingController extends Controller
                 'reading_date' => $month->copy()->endOfMonth()->toDateString(),
                 'previous_m3' => $suggestedPrev,
                 'current_m3' => $suggestedPrev,
-                'confirmed_m3' => $suggestedPrev,
+                'confirmed_m3' => null,
                 'photo_path' => $path,
             ]);
         }
@@ -314,8 +341,6 @@ class GasMeterReadingController extends Controller
                 'required',
                 'integer',
                 'exists:flats,id',
-                Rule::unique('gas_meter_readings', 'flat_id')
-                    ->where(fn ($q) => $q->whereDate('bill_month', $month->toDateString())),
             ],
             'reading_date' => ['required', 'date'],
             'previous_m3' => ['required', 'numeric', 'min:0'],
@@ -345,6 +370,17 @@ class GasMeterReadingController extends Controller
             return back()->withErrors(['current_m3' => 'Current reading cannot be less than previous.'])->withInput();
         }
 
+        // Photo upload may have already created a draft row for this flat/month.
+        // Upsert so garage "Add" still works after a photo without a page reload.
+        $existing = GasMeterReading::query()
+            ->where('flat_id', $flat->id)
+            ->whereDate('bill_month', $month->toDateString())
+            ->first();
+
+        if ($existing) {
+            return $this->persistReadingValues($request, $existing, $data, created: false);
+        }
+
         $photoPath = $data['photo_path'] ?? null;
         if ($request->hasFile('photo')) {
             $photoPath = $request->file('photo')->store('meter-readings/'.$flat->id, 'public');
@@ -370,22 +406,7 @@ class GasMeterReadingController extends Controller
             return response()->json([
                 'ok' => true,
                 'message' => 'Gas reading saved for '.$flat->name.'.',
-                'reading' => [
-                    'id' => $reading->id,
-                    'flat_id' => $flat->id,
-                    'flat_name' => $flat->name,
-                    'bill_month' => $month->format('Y-m'),
-                    'reading_date' => $reading->reading_date?->format('Y-m-d'),
-                    'previous_m3' => (float) $reading->previous_m3,
-                    'current_m3' => (float) $reading->current_m3,
-                    'consumed_m3' => $reading->consumedM3(),
-                    'photo_path' => $reading->photo_path,
-                    'gemini_suggestion' => $reading->gemini_suggestion !== null
-                        ? (float) $reading->gemini_suggestion
-                        : null,
-                    'update_url' => route('admin.gas-readings.update', $reading),
-                    'destroy_url' => route('admin.gas-readings.destroy', $reading),
-                ],
+                'reading' => $this->readingPayload($reading, $flat),
             ]);
         }
 
@@ -423,54 +444,7 @@ class GasMeterReadingController extends Controller
             return back()->withErrors(['current_m3' => 'Current reading cannot be less than previous.'])->withInput();
         }
 
-        $photoPath = $gasMeterReading->photo_path;
-        if ($request->hasFile('photo')) {
-            if ($photoPath) {
-                Storage::disk('public')->delete($photoPath);
-            }
-            $photoPath = $request->file('photo')->store('meter-readings/'.$gasMeterReading->flat_id, 'public');
-        } elseif (! empty($data['photo_path'])) {
-            $photoPath = $data['photo_path'];
-        }
-
-        $gasMeterReading->update([
-            'reading_date' => $data['reading_date'],
-            'previous_m3' => $data['previous_m3'],
-            'current_m3' => $data['current_m3'],
-            'confirmed_m3' => $data['current_m3'],
-            'photo_path' => $photoPath,
-            'gemini_suggestion' => $data['gemini_suggestion'] ?? $gasMeterReading->gemini_suggestion,
-        ]);
-
-        $gasMeterReading->refresh();
-        $flat = $gasMeterReading->flat;
-
-        if ($request->expectsJson()) {
-            return response()->json([
-                'ok' => true,
-                'message' => 'Gas reading confirmed and saved for '.$flat->name.'.',
-                'reading' => [
-                    'id' => $gasMeterReading->id,
-                    'flat_id' => $flat->id,
-                    'flat_name' => $flat->name,
-                    'bill_month' => $gasMeterReading->bill_month->format('Y-m'),
-                    'reading_date' => $gasMeterReading->reading_date?->format('Y-m-d'),
-                    'previous_m3' => (float) $gasMeterReading->previous_m3,
-                    'current_m3' => (float) $gasMeterReading->current_m3,
-                    'consumed_m3' => $gasMeterReading->consumedM3(),
-                    'photo_path' => $gasMeterReading->photo_path,
-                    'gemini_suggestion' => $gasMeterReading->gemini_suggestion !== null
-                        ? (float) $gasMeterReading->gemini_suggestion
-                        : null,
-                    'update_url' => route('admin.gas-readings.update', $gasMeterReading),
-                    'destroy_url' => route('admin.gas-readings.destroy', $gasMeterReading),
-                ],
-            ]);
-        }
-
-        return redirect()
-            ->route('admin.gas-readings.index', ['month' => $gasMeterReading->bill_month->format('Y-m')])
-            ->with('success', 'Gas reading confirmed and saved for '.$flat->name.'.');
+        return $this->persistReadingValues($request, $gasMeterReading, $data, created: false);
     }
 
     public function destroy(GasMeterReading $gasMeterReading): RedirectResponse
@@ -484,6 +458,94 @@ class GasMeterReadingController extends Controller
         return redirect()
             ->route('admin.gas-readings.index', ['month' => $month])
             ->with('success', 'Gas reading deleted.');
+    }
+
+    /**
+     * @param  array{reading_date: string, previous_m3: mixed, current_m3: mixed, gemini_suggestion?: mixed, photo_path?: string|null}  $data
+     */
+    private function persistReadingValues(
+        Request $request,
+        GasMeterReading $reading,
+        array $data,
+        bool $created,
+    ): RedirectResponse|JsonResponse {
+        $flat = $reading->flat;
+        $photoPath = $reading->photo_path;
+
+        if ($request->hasFile('photo')) {
+            if ($photoPath) {
+                Storage::disk('public')->delete($photoPath);
+            }
+            $photoPath = $request->file('photo')->store('meter-readings/'.$reading->flat_id, 'public');
+        } elseif (! empty($data['photo_path'])) {
+            $photoPath = $data['photo_path'];
+        }
+
+        $reading->update([
+            'reading_date' => $data['reading_date'],
+            'previous_m3' => $data['previous_m3'],
+            'current_m3' => $data['current_m3'],
+            'confirmed_m3' => $data['current_m3'],
+            'photo_path' => $photoPath,
+            'gemini_suggestion' => $data['gemini_suggestion'] ?? $reading->gemini_suggestion,
+        ]);
+
+        $reading->refresh();
+
+        \App\Support\Auditor::log($created ? 'gas_reading.created' : 'gas_reading.updated', $flat, [
+            'bill_month' => $reading->bill_month->toDateString(),
+            'current_m3' => $data['current_m3'],
+        ]);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'message' => 'Gas reading confirmed and saved for '.$flat->name.'.',
+                'reading' => $this->readingPayload($reading, $flat),
+            ]);
+        }
+
+        return redirect()
+            ->route('admin.gas-readings.index', ['month' => $reading->bill_month->format('Y-m')])
+            ->with('success', 'Gas reading confirmed and saved for '.$flat->name.'.');
+    }
+
+    /**
+     * @return array{
+     *     id: int,
+     *     flat_id: int,
+     *     flat_name: string,
+     *     bill_month: string,
+     *     reading_date: string|null,
+     *     previous_m3: float,
+     *     current_m3: float,
+     *     confirmed: bool,
+     *     consumed_m3: float,
+     *     photo_path: string|null,
+     *     gemini_suggestion: float|null,
+     *     update_url: string,
+     *     destroy_url: string
+     * }
+     */
+    private function readingPayload(GasMeterReading $reading, Flat $flat): array
+    {
+        return [
+            'id' => $reading->id,
+            'flat_id' => $flat->id,
+            'flat_name' => $flat->name,
+            'bill_month' => $reading->bill_month->format('Y-m'),
+            'reading_date' => $reading->reading_date?->format('Y-m-d'),
+            'previous_m3' => (float) $reading->previous_m3,
+            'current_m3' => (float) $reading->current_m3,
+            'confirmed' => $reading->isConfirmed(),
+            'consumed_m3' => $reading->isConfirmed() ? $reading->consumedM3() : 0.0,
+            'photo_path' => $reading->photo_path,
+            'gemini_suggestion' => $reading->gemini_suggestion !== null
+                ? (float) $reading->gemini_suggestion
+                : null,
+            'update_url' => route('admin.gas-readings.update', $reading),
+            'destroy_url' => route('admin.gas-readings.destroy', $reading),
+        ];
     }
 
     private function resolveMonth(?string $month): Carbon

@@ -8,16 +8,53 @@
             <div>
                 <h1 class="fw-bold text-dark mb-1">Gas meter readings</h1>
                 <p class="text-muted mb-0">
-                    Garage workflow: <strong>Photo</strong> stores a small image in this browser (works offline),
-                    then <strong>Sync</strong> uploads when you have signal. Photos are kept for later use — enter readings manually.
+                    View and edit readings for <strong>{{ $selectedMonth->format('F Y') }}</strong>.
+                    Take a photo in the garage (works offline), then enter the m³ value for each flat.
                 </p>
             </div>
-            <form method="get" class="d-flex align-items-center gap-2">
-                <label for="month" class="form-label mb-0">Month</label>
-                <input type="month" name="month" id="month" class="form-control"
-                       value="{{ $selectedMonth->format('Y-m') }}" onchange="this.form.submit()">
-            </form>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <a href="{{ route('admin.gas-readings.index', ['month' => $previousMonth->format('Y-m')]) }}"
+                   class="btn btn-sm btn-outline-secondary">← {{ $previousMonth->format('M Y') }}</a>
+                <form method="get" class="d-flex align-items-center gap-2 mb-0">
+                    <label for="month" class="form-label mb-0">Month</label>
+                    <input type="month" name="month" id="month" class="form-control"
+                           value="{{ $selectedMonth->format('Y-m') }}" onchange="this.form.submit()">
+                </form>
+                <a href="{{ route('admin.gas-readings.index', ['month' => $nextMonth->format('Y-m')]) }}"
+                   class="btn btn-sm btn-outline-secondary">{{ $nextMonth->format('M Y') }} →</a>
+            </div>
         </div>
+
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+            <span class="badge text-bg-success">Entered {{ $confirmedCount }}</span>
+            @if($photoOnlyCount > 0)
+                <span class="badge text-bg-warning">Photo only {{ $photoOnlyCount }}</span>
+            @endif
+            @if($missingCount > 0)
+                <span class="badge text-bg-secondary">Missing {{ $missingCount }}</span>
+            @endif
+            <span class="text-muted small">of {{ $rows->count() }} gas flats</span>
+        </div>
+
+        @if($availableMonths->isNotEmpty())
+            <div class="mb-4">
+                <div class="text-muted small mb-2">Browse months</div>
+                <div class="d-flex flex-wrap gap-2">
+                    @foreach($availableMonths as $monthRow)
+                        @php
+                            $ym = \Carbon\Carbon::parse($monthRow->bill_month)->format('Y-m');
+                            $label = \Carbon\Carbon::parse($monthRow->bill_month)->format('M Y');
+                            $active = $ym === $selectedMonth->format('Y-m');
+                        @endphp
+                        <a href="{{ route('admin.gas-readings.index', ['month' => $ym]) }}"
+                           class="btn btn-sm {{ $active ? 'btn-dark' : 'btn-outline-secondary' }}">
+                            {{ $label }}
+                            <span class="opacity-75">({{ (int) $monthRow->confirmed_count }}/{{ (int) $monthRow->readings_count }})</span>
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        @endif
 
         <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
             <span id="network-status" class="badge text-bg-secondary">…</span>
@@ -61,6 +98,7 @@
                         @php
                             $flat = $row['flat'];
                             $reading = $row['reading'];
+                            $confirmed = $reading?->isConfirmed() ?? false;
                             $hasPhoto = filled($reading?->photo_path);
                             $readingDateDefault = $reading?->reading_date?->format('Y-m-d')
                                 ?? $selectedMonth->copy()->endOfMonth()->format('Y-m-d');
@@ -68,6 +106,7 @@
                             $photoUrl = $hasPhoto
                                 ? route('admin.gas-readings.photo-file', ['flat' => $flat, 'month' => $selectedMonth->format('Y-m')])
                                 : null;
+                            $currentValue = $confirmed ? $reading->current_m3 : '';
                         @endphp
                         <tr data-flat-row="{{ $flat->id }}"
                             data-flat-name="{{ $flat->name }}"
@@ -75,6 +114,9 @@
                             @if($reading) data-reading-id="{{ $reading->id }}" @endif>
                             <td class="fw-semibold">
                                 {{ $flat->name }}
+                                @if($hasPhoto && ! $confirmed)
+                                    <div class="small text-warning">Photo only — enter reading</div>
+                                @endif
                                 @if($hasPhoto)
                                     <div class="mt-1">
                                         <a href="{{ $photoUrl }}" target="_blank" rel="noopener">
@@ -99,10 +141,12 @@
                                 <input form="{{ $formId }}" type="number" step="0.01" min="0" name="current_m3"
                                        data-current-input="{{ $flat->id }}"
                                        class="form-control form-control-sm"
-                                       value="{{ $reading?->current_m3 }}" required>
+                                       value="{{ $currentValue }}"
+                                       placeholder="{{ $hasPhoto && ! $confirmed ? 'Enter from photo' : '' }}"
+                                       required>
                             </td>
-                            <td @if(! $reading) data-used-cell="{{ $flat->id }}" class="text-muted" @endif>
-                                {{ $reading ? number_format($reading->consumedM3(), 2) : '—' }}
+                            <td @if(! $confirmed) data-used-cell="{{ $flat->id }}" class="text-muted" @endif>
+                                {{ $confirmed ? number_format($reading->consumedM3(), 2) : '—' }}
                             </td>
                             <td>
                                 <div data-photo-status="{{ $flat->id }}" class="small photo-status text-muted">
@@ -163,5 +207,5 @@
 @endsection
 
 @section('js')
-<script src="/js/gas-meter-offline.js?v=2"></script>
+<script src="/js/gas-meter-offline.js?v=3"></script>
 @endsection

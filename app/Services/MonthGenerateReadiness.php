@@ -50,8 +50,10 @@ class MonthGenerateReadiness
             })
             ->values();
 
+        // Only confirmed readings count — photo-only drafts are still pending.
         $gasReadings = GasMeterReading::query()
             ->whereDate('bill_month', $monthKey)
+            ->whereNotNull('confirmed_m3')
             ->pluck('flat_id')
             ->flip();
 
