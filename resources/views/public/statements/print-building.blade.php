@@ -49,24 +49,41 @@
         }
         .flat-grid {
             display: grid;
-            grid-template-columns: 1.2fr 1fr;
-            gap: 8px 20px;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 132px;
+            gap: 8px 14px;
+            align-items: start;
+        }
+        .flat-grid.no-photo {
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         }
         @media (max-width: 640px) {
-            .flat-grid { grid-template-columns: 1fr; }
+            .flat-grid,
+            .flat-grid.no-photo { grid-template-columns: 1fr; }
         }
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 4px 0; text-align: left; vertical-align: top; }
         th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: #444; }
         .text-end { text-align: right; }
         .gas-eq { font-variant-numeric: tabular-nums; }
+        .gas-photo-col {
+            text-align: center;
+        }
+        .gas-photo-col .gas-photo-heading {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #444;
+            margin: 0 0 6px;
+            text-align: left;
+        }
         .gas-photo {
-            margin-top: 8px;
-            max-width: 160px;
+            width: 100%;
+            max-width: 120px;
             max-height: 120px;
             border: 1px solid #ccc;
             border-radius: 3px;
             display: block;
+            margin: 0 auto;
             object-fit: contain;
             background: #fafafa;
         }
@@ -128,7 +145,7 @@
     @forelse($rows as $row)
         <section class="flat-block">
             <h2>Flat {{ $row['flat_name'] }}</h2>
-            <div class="flat-grid">
+            <div class="flat-grid{{ empty($row['gas_photo_data_uri']) ? ' no-photo' : '' }}">
                 <div>
                     <table>
                         <thead>
@@ -161,10 +178,6 @@
                             @endif
                         </tbody>
                     </table>
-                    @if(! empty($row['gas_photo_data_uri']))
-                        <img class="gas-photo" src="{{ $row['gas_photo_data_uri'] }}" alt="Gas meter photo for flat {{ $row['flat_name'] }}">
-                        <div class="gas-photo-label">Meter photo</div>
-                    @endif
                 </div>
                 <div>
                     <table>
@@ -188,6 +201,12 @@
                         </tbody>
                     </table>
                 </div>
+                @if(! empty($row['gas_photo_data_uri']))
+                    <div class="gas-photo-col">
+                        <div class="gas-photo-heading">Meter photo</div>
+                        <img class="gas-photo" src="{{ $row['gas_photo_data_uri'] }}" alt="Gas meter photo for flat {{ $row['flat_name'] }}">
+                    </div>
+                @endif
             </div>
             <div class="total-line">
                 <span>Total</span>
