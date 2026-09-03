@@ -85,8 +85,10 @@
     </style>
 </head>
 <body>
-    <div class="toolbar no-print">
+        <div class="toolbar no-print">
         <button type="button" onclick="window.print()">Print / Save as PDF</button>
+        <a href="{{ route('public.statements.print-building-pos', ['month' => $selectedMonth->format('Y-m')]) }}">POS print</a>
+        <a href="{{ route('admin.dashboard') }}">Dashboard</a>
         <a href="{{ route('home') }}">Back to home</a>
         @if($availableMonths->isNotEmpty())
             <form method="GET" action="{{ route('public.statements.print-building') }}" style="display:inline-flex; gap:8px; align-items:center; margin:0;">

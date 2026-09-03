@@ -39,6 +39,8 @@
         <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
             <a href="{{ route('admin.ledger.index') }}" class="btn btn-outline-secondary">Open ledger</a>
             <a href="{{ route('admin.collections.index') }}" class="btn btn-outline-secondary">Collections</a>
+            <a href="{{ route('public.statements.print-building', ['month' => $printMonth]) }}" class="btn btn-outline-secondary">Print bills</a>
+            <a href="{{ route('public.statements.print-building-pos', ['month' => $printMonth]) }}" class="btn btn-outline-secondary">POS print</a>
         </div>
 
         <div class="row g-4">

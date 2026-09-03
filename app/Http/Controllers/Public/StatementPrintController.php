@@ -8,6 +8,7 @@ use App\Models\MonthlyStatement;
 use App\Support\BillMonth;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -34,6 +35,24 @@ class StatementPrintController extends Controller
     }
 
     public function building(Request $request): View
+    {
+        return view('public.statements.print-building', $this->buildingPrintData($request));
+    }
+
+    public function buildingPos(Request $request): View
+    {
+        return view('public.statements.print-building-pos', $this->buildingPrintData($request));
+    }
+
+    /**
+     * @return array{
+     *     selectedMonth: Carbon,
+     *     rows: Collection<int, array<string, mixed>>,
+     *     availableMonths: Collection<int, string>,
+     *     grandTotal: float
+     * }
+     */
+    private function buildingPrintData(Request $request): array
     {
         $month = $this->resolveMonth($request->query('month'), preferLatest: true);
         $monthKey = $month->toDateString();
@@ -85,12 +104,12 @@ class StatementPrintController extends Controller
             ->pluck('bill_month')
             ->map(fn ($date) => Carbon::parse($date)->format('Y-m'));
 
-        return view('public.statements.print-building', [
+        return [
             'selectedMonth' => $month,
             'rows' => $rows,
             'availableMonths' => $availableMonths,
             'grandTotal' => (float) $rows->sum('total'),
-        ]);
+        ];
     }
 
     private function resolveMonth(?string $month, bool $preferLatest = false): Carbon

@@ -45,6 +45,7 @@ Route::get('/flats/{flat}', [PublicFlatController::class, 'show'])->name('public
 Route::get('/flats/{flat}/statements/gas', [StatementController::class, 'gas'])->name('public.statements.gas');
 Route::get('/flats/{flat}/statements/others', [StatementController::class, 'others'])->name('public.statements.others');
 Route::get('/statements/print', [StatementPrintController::class, 'building'])->name('public.statements.print-building');
+Route::get('/statements/print-pos', [StatementPrintController::class, 'buildingPos'])->name('public.statements.print-building-pos');
 Route::get('/flats/{flat}/statements/print', [StatementPrintController::class, 'show'])->name('public.statements.print');
 
 // Public shareable attachment media (no auth; bypasses /storage symlink host issues)

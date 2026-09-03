@@ -41,6 +41,11 @@ class DashboardController extends Controller
             })
             ->values();
 
+        $latestBillMonth = MonthlyStatement::query()->max('bill_month');
+        $printMonth = $latestBillMonth
+            ? \Carbon\Carbon::parse($latestBillMonth)->format('Y-m')
+            : now()->format('Y-m');
+
         return view('admin.dashboard.index', [
             'building' => $building,
             'opening' => $opening,
@@ -48,6 +53,7 @@ class DashboardController extends Controller
             'pending' => $pending,
             'recentEntries' => $recentEntries,
             'pendingStatements' => $pendingStatements,
+            'printMonth' => $printMonth,
         ]);
     }
 }
