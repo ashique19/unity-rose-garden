@@ -59,23 +59,40 @@
             padding-bottom: 4px;
         }
         .slip-header {
-            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
             margin-bottom: 4px;
+        }
+        .slip-header .left {
+            flex: 1;
+            min-width: 0;
+            text-align: left;
+        }
+        .slip-header .right {
+            flex-shrink: 0;
+            text-align: right;
+            text-transform: uppercase;
         }
         .slip-header .brand {
             font-weight: bold;
-            font-size: 14px;
+            font-size: 13px;
             text-transform: uppercase;
+            line-height: 1.2;
         }
-        .slip-header .sub {
+        .slip-header .month {
             font-size: 12px;
             margin-top: 2px;
         }
+        .slip-header .flat-label {
+            font-size: 11px;
+            line-height: 1.2;
+        }
         .slip-header .flat-name {
             font-weight: bold;
-            font-size: 13px;
-            margin-top: 4px;
-            text-transform: uppercase;
+            font-size: 16px;
+            line-height: 1.2;
         }
         .section {
             font-weight: bold;
@@ -153,9 +170,14 @@
     @forelse($rows as $row)
         <section class="flat-slip">
             <div class="slip-header">
-                <div class="brand">Unity Rose Garden</div>
-                <div class="sub">Monthly bills - {{ $selectedMonth->format('F Y') }}</div>
-                <div class="flat-name">FLAT {{ $row['flat_name'] }}</div>
+                <div class="left">
+                    <div class="brand">Unity Rose Garden</div>
+                    <div class="month">{{ $selectedMonth->format('F Y') }}</div>
+                </div>
+                <div class="right">
+                    <div class="flat-label">FLAT</div>
+                    <div class="flat-name">{{ $row['flat_name'] }}</div>
+                </div>
             </div>
             <hr class="sep">
 
