@@ -38,7 +38,12 @@ class GasMeterReadingController extends Controller
             ->sortBy(function (Flat $flat) {
                 preg_match('/^(\d+)([A-Z])$/i', $flat->name, $m);
 
-                return [isset($m[1]) ? (int) $m[1] : 0, $m[2] ?? $flat->name];
+                // Group by wing letter (A… then B…), then floor number.
+                return [
+                    strtoupper($m[2] ?? 'Z'),
+                    isset($m[1]) ? (int) $m[1] : 0,
+                    $flat->name,
+                ];
             })
             ->values();
 

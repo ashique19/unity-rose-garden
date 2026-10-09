@@ -168,24 +168,24 @@
   function markPhotoOnlyHint(flatId, show) {
     const row = document.querySelector('[data-flat-row="' + flatId + '"]');
     if (!row) return;
-    const nameCell = row.children[0];
+    const nameCell = row.querySelector('[data-flat-name-cell]') || row.children[0];
     if (!nameCell) return;
-    let hint = nameCell.querySelector('[data-photo-only-hint]');
+    const identity = nameCell.querySelector('.gas-flat-card__identity') || nameCell;
+    let hint = row.querySelector('[data-photo-only-hint]');
     if (show) {
       if (!hint) {
         hint = document.createElement('div');
         hint.setAttribute('data-photo-only-hint', '1');
         hint.className = 'small text-warning';
         hint.textContent = 'Photo only — enter reading';
-        nameCell.appendChild(hint);
+        identity.appendChild(hint);
       }
       const current = row.querySelector('[data-current-input="' + flatId + '"]');
       if (current && !current.value) {
         current.placeholder = 'Enter from photo';
       }
-      const used = row.querySelector('[data-used-cell="' + flatId + '"]') || row.children[4];
-      if (used && !used.hasAttribute('data-used-cell')) {
-        used.setAttribute('data-used-cell', flatId);
+      const used = row.querySelector('[data-used-cell="' + flatId + '"]');
+      if (used) {
         used.classList.add('text-muted');
         used.textContent = '—';
       }
@@ -333,16 +333,14 @@
       el.setAttribute('form', newFormId);
     });
 
-    const used = row.querySelector('[data-used-cell="' + flatId + '"]') || row.children[4];
+    const used = row.querySelector('[data-used-cell="' + flatId + '"]');
     if (used) {
       if (reading.confirmed) {
         used.classList.remove('text-muted');
-        used.removeAttribute('data-used-cell');
         used.textContent = Number(reading.consumed_m3).toFixed(2);
         markPhotoOnlyHint(flatId, false);
       } else {
         used.classList.add('text-muted');
-        used.setAttribute('data-used-cell', flatId);
         used.textContent = '—';
       }
     }
@@ -380,10 +378,9 @@
     const row = document.querySelector('[data-flat-row="' + flatId + '"]');
     if (!row) return;
 
-    const used = row.children[4];
+    const used = row.querySelector('[data-used-cell="' + flatId + '"]');
     if (used) {
       used.classList.remove('text-muted');
-      used.removeAttribute('data-used-cell');
       used.textContent = Number(reading.consumed_m3).toFixed(2);
     }
 
