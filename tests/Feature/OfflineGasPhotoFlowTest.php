@@ -265,4 +265,36 @@ class OfflineGasPhotoFlowTest extends TestCase
             ->assertSee('id="gas-total-used"', false)
             ->assertSee('>5.75<', false);
     }
+
+    #[Test]
+    public function month_page_is_mobile_card_layout_grouped_by_wing(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $user = User::query()->where('phone', '01785636359')->firstOrFail();
+
+        $html = $this->actingAs($user)
+            ->get(route('admin.gas-readings.index', ['month' => '2026-06']))
+            ->assertOk()
+            ->assertSee('gas-flat-card', false)
+            ->assertSee('Side A')
+            ->assertSee('Side B')
+            ->assertDontSee('<table', false)
+            ->getContent();
+
+        $posSideA = strpos($html, 'Side A');
+        $posSideB = strpos($html, 'Side B');
+        $pos2A = strpos($html, 'data-flat-name="2A"');
+        $pos10A = strpos($html, 'data-flat-name="10A"');
+        $pos2B = strpos($html, 'data-flat-name="2B"');
+        $pos10B = strpos($html, 'data-flat-name="10B"');
+
+        $this->assertNotFalse($posSideA);
+        $this->assertNotFalse($posSideB);
+        $this->assertLessThan($posSideB, $posSideA);
+        $this->assertLessThan($pos10A, $pos2A);
+        $this->assertLessThan($pos2B, $pos10A);
+        $this->assertLessThan($pos10B, $pos2B);
+        $this->assertLessThan($pos2B, $posSideB);
+    }
 }
